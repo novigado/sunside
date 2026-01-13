@@ -1,0 +1,92 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+#
+# NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+# property and proprietary rights in and to this material, related
+# documentation and any modifications thereto. Any use, reproduction,
+# disclosure or distribution of this material and related documentation
+# without an express license agreement from NVIDIA CORPORATION or
+# its affiliates is strictly prohibited.
+
+[package]
+title = "City Shadow Analyzer API Service"
+version = "0.1.0"
+description = """REST API service for shadow analysis - headless mode for production deployment."""
+keywords = ["app", "service", "api"]
+template_name = "kit_service"
+
+
+[dependencies]
+# Core Kit dependencies for headless service
+"omni.kit.uiapp" = {}
+"omni.hydra.rtx" = {}  # RTX renderer for ray casting
+"omni.graph.core" = {}
+
+# Shadow analyzer extensions
+"city.shadow_analyzer.sun" = {}
+"city.shadow_analyzer.buildings" = { order = -100 }
+"city.shadow_analyzer.api" = {}
+
+
+[settings]
+# API Server Configuration
+exts."city.shadow_analyzer.api".host = "0.0.0.0"
+exts."city.shadow_analyzer.api".port = 8000
+
+# RTX Settings - optimized for headless ray casting
+renderer.enabled = "rtx"
+renderer.active = "rtx"
+rtx.raytracing.cached.enabled = false
+rtx.raytracing.lightcache.cached.enabled = false
+rtx.directLighting.sampledLighting.enabled = true
+rtx.indirectDiffuse.enabled = false
+rtx.reflections.enabled = false
+rtx.translucency.enabled = false
+rtx.ambientOcclusion.enabled = false
+rtx.raytracing.fractionalCutoutOpacity.enabled = false
+
+# Performance settings
+rtx.post.dlss.execMode = 0  # Disable DLSS
+rtx.post.aa.op = 0  # Disable anti-aliasing
+app.renderer.resolution.width = 1280
+app.renderer.resolution.height = 720
+
+# Disable telemetry for service mode
+exts."omni.kit.telemetry".enableAnonymousData = false
+
+# Logging
+app.logLevel = "info"
+app.file.logLevel = "info"
+
+# Window settings for headless mode
+app.window.title = "City Shadow Analyzer API Service"
+app.window.iconPath = "${app}/../exts/city.shadow_analyzer.api/data/icon.png"
+
+# Hide UI in service mode (can be overridden with --enable-ui flag)
+app.window.width = 1280
+app.window.height = 720
+
+# Disable unnecessary UI extensions for service mode
+exts."omni.kit.window.viewport".enabled = false
+exts."omni.kit.window.stage".enabled = false
+exts."omni.kit.window.content_browser".enabled = false
+exts."omni.kit.window.console".enabled = false
+exts."omni.kit.window.script_editor".enabled = false
+
+[settings.app.window]
+# Window startup position
+x = 0
+y = 0
+
+[settings.persistent]
+app.window.uiStyle = "NvidiaDark"
+
+[settings.crashreporter.data]
+experience = "City Shadow Analyzer API"
+
+[[test]]
+dependencies = [
+    "omni.kit.renderer.core",
+]
+
+timeout = 180

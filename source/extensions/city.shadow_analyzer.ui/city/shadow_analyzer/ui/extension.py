@@ -711,48 +711,48 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             # Get the default perspective camera
             camera_path = "/OmniverseKit_Persp"
             camera_prim = stage.GetPrimAtPath(camera_path)
-            
+
             if not camera_prim or not camera_prim.IsValid():
                 carb.log_warn("[Shadow Analyzer] Default camera not found, trying /World/Camera")
                 camera_path = "/World/Camera"
                 camera_prim = stage.GetPrimAtPath(camera_path)
-            
+
             if camera_prim and camera_prim.IsValid():
                 from pxr import UsdGeom
-                
+
                 camera_xform = UsdGeom.Xformable(camera_prim)
-                
+
                 # Set camera to a good bird's-eye view position
                 # Position: 200m away on diagonal, 150m up
                 camera_pos = Gf.Vec3d(200, 150, 200)  # X, Y, Z
-                
+
                 # Calculate rotation to look at origin
                 look_at = Gf.Vec3d(0, 0, 0)
                 direction = (look_at - camera_pos).GetNormalized()
-                
+
                 # Calculate pitch and yaw
                 import math
                 xz_length = math.sqrt(direction[0]**2 + direction[2]**2)
                 pitch = math.degrees(math.atan2(-direction[1], xz_length))
                 yaw = math.degrees(math.atan2(direction[0], -direction[2]))
-                
+
                 # Clear and set transforms
                 camera_xform.ClearXformOpOrder()
-                
+
                 # Add translate
                 translate_op = camera_xform.AddTranslateOp()
                 translate_op.Set(camera_pos)
-                
+
                 # Add rotations
                 rotate_y_op = camera_xform.AddRotateYOp()
                 rotate_y_op.Set(yaw)
-                
+
                 rotate_x_op = camera_xform.AddRotateXOp()
                 rotate_x_op.Set(pitch)
-                
+
                 carb.log_info(f"[Shadow Analyzer] Camera positioned at ({camera_pos[0]}, {camera_pos[1]}, {camera_pos[2]})")
                 carb.log_info(f"[Shadow Analyzer] Looking at origin with pitch={pitch:.1f}°, yaw={yaw:.1f}°")
-                
+
             else:
                 carb.log_warn("[Shadow Analyzer] Could not find valid camera to position")
 
