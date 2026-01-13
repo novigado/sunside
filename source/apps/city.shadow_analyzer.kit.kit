@@ -69,8 +69,9 @@ template_name = "kit_base_editor"
 "omni.warp.core" = {} # Warp support
 
 # City Shadow Analyzer Extensions
-"city.shadow_analyzer.sun" = {} # Sun position calculation
-"city.shadow_analyzer.ui" = {} # Main UI controls
+"city.shadow_analyzer.sun" = {}  # Sun position calculation
+"city.shadow_analyzer.buildings" = { order = -100 }  # OpenStreetMap building loader (load early)
+"city.shadow_analyzer.ui" = {}  # Main UI controls
 
 
 [settings.persistent.app]

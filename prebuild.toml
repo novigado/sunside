@@ -1,0 +1,5 @@
+# Link local extensions to build output so they can be found by Kit
+[[root]]
+link = [
+	["${root}/source/extensions", "${root}/_build/${platform}/${config}/exts"],
+]
