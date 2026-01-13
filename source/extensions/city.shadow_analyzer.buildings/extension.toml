@@ -1,0 +1,44 @@
+[package]
+# Semantic Versioning is used: https://semver.org/
+version = "0.1.0"
+
+# Lists people or organizations that are considered the "authors" of the package.
+authors = ["NVIDIA"]
+
+# The title and description fields are primarily for displaying extension info in UI
+title = "City Shadow Analyzer - Buildings"
+description = "Loads and manages building data from OpenStreetMap for shadow analysis"
+
+# Path (relative to the root) or content of readme markdown file for UI.
+readme = "docs/README.md"
+
+# One of categories for UI.
+category = "simulation"
+
+# Keywords for the extension
+keywords = ["buildings", "openstreetmap", "osm", "city", "geometry"]
+
+# Icon to show in the extension manager
+icon = "data/icon.png"
+
+# Preview image and video to show in the extension manager
+preview_image = "data/preview.png"
+
+# URL of the extension source repository.
+repository = ""
+
+# Dependencies
+[dependencies]
+"omni.kit.commands" = {}
+"omni.usd" = {}
+
+# Python packages from PyPI
+[[python.module]]
+name = "city.shadow_analyzer.buildings"
+
+[python.pipapi]
+requirements = [
+    "requests",
+    "overpy"
+]
+use_online_index = true

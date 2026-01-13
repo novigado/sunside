@@ -82,7 +82,7 @@ class ShadowAnalyzerAPI:
             docs_url="/docs",
             redoc_url="/redoc"
         )
-        
+
         # Add CORS middleware for smartphone/web access
         self.app.add_middleware(
             CORSMiddleware,
@@ -91,22 +91,22 @@ class ShadowAnalyzerAPI:
             allow_methods=["*"],
             allow_headers=["*"],
         )
-        
+
         # Initialize components
         self.building_loader = BuildingLoader()
         self.geometry_converter = BuildingGeometryConverter()
         self.shadow_analyzer = None  # Will be initialized per-request with scene data
-        
+
         # Setup routes
         self._setup_routes()
-        
+
         # Server control
         self._server = None
         self._shutdown_event = threading.Event()
 
     def _setup_routes(self):
         """Setup API routes."""
-        
+
         @self.app.get("/", response_model=Dict[str, str])
         async def root():
             """Root endpoint with API information."""
@@ -116,7 +116,7 @@ class ShadowAnalyzerAPI:
                 "docs": f"http://{self.host}:{self.port}/docs",
                 "status": "running"
             }
-        
+
         @self.app.get("/health", response_model=HealthResponse)
         async def health_check():
             """Health check endpoint."""
@@ -125,12 +125,12 @@ class ShadowAnalyzerAPI:
                 version="1.0.0",
                 timestamp=datetime.now(timezone.utc).isoformat()
             )
-        
+
         @self.app.post("/api/v1/sun/position", response_model=SunPositionResponse)
         async def get_sun_position(request: SunPositionRequest):
             """
             Calculate sun position for given location and time.
-            
+
             Returns azimuth and elevation angles of the sun.
             """
             try:
@@ -139,14 +139,14 @@ class ShadowAnalyzerAPI:
                     dt = datetime.fromisoformat(request.timestamp.replace('Z', '+00:00'))
                 else:
                     dt = datetime.now(timezone.utc)
-                
+
                 # Calculate sun position
                 azimuth, elevation, distance = SunCalculator.calculate_sun_position(
                     request.latitude,
                     request.longitude,
                     dt
                 )
-                
+
                 return SunPositionResponse(
                     azimuth=azimuth,
                     elevation=elevation,
@@ -158,12 +158,12 @@ class ShadowAnalyzerAPI:
             except Exception as e:
                 carb.log_error(f"[ShadowAnalyzerAPI] Error calculating sun position: {e}")
                 raise HTTPException(status_code=500, detail=f"Error calculating sun position: {str(e)}")
-        
+
         @self.app.post("/api/v1/shadow/query", response_model=ShadowQueryResponse)
         async def query_shadow(request: ShadowQueryRequest):
             """
             Query whether a GPS location is in shadow at a given time.
-            
+
             This endpoint:
             1. Loads building data from OpenStreetMap around the location
             2. Calculates sun position for the given time
@@ -176,16 +176,16 @@ class ShadowAnalyzerAPI:
                     dt = datetime.fromisoformat(request.timestamp.replace('Z', '+00:00'))
                 else:
                     dt = datetime.now(timezone.utc)
-                
+
                 carb.log_info(f"[ShadowAnalyzerAPI] Shadow query: lat={request.latitude}, lon={request.longitude}, time={dt}")
-                
+
                 # Calculate sun position
                 azimuth, elevation, distance = SunCalculator.calculate_sun_position(
                     request.latitude,
                     request.longitude,
                     dt
                 )
-                
+
                 # Check if sun is below horizon
                 if elevation < 0:
                     return ShadowQueryResponse(
@@ -198,7 +198,7 @@ class ShadowAnalyzerAPI:
                         timestamp=dt.isoformat(),
                         message="Sun is below horizon (nighttime)"
                     )
-                
+
                 # Load building data from OpenStreetMap
                 try:
                     scene_data = self.building_loader.load_scene_data(
@@ -207,7 +207,7 @@ class ShadowAnalyzerAPI:
                         request.search_radius
                     )
                     buildings = scene_data.get('buildings', [])
-                    
+
                     if not buildings:
                         return ShadowQueryResponse(
                             is_shadowed=False,
@@ -219,9 +219,9 @@ class ShadowAnalyzerAPI:
                             timestamp=dt.isoformat(),
                             message="No buildings found in area"
                         )
-                    
+
                     carb.log_info(f"[ShadowAnalyzerAPI] Loaded {len(buildings)} buildings")
-                    
+
                 except Exception as e:
                     carb.log_error(f"[ShadowAnalyzerAPI] Error loading buildings: {e}")
                     return ShadowQueryResponse(
@@ -234,26 +234,26 @@ class ShadowAnalyzerAPI:
                         timestamp=dt.isoformat(),
                         message=f"Could not load building data: {str(e)}"
                     )
-                
+
                 # Convert GPS to scene coordinates
                 query_x, query_z = self.geometry_converter.gps_to_scene_coords(
                     request.latitude,
                     request.longitude
                 )
                 query_point = (query_x, 1.5, query_z)  # 1.5m height (person height)
-                
+
                 # Get sun direction vector
                 sun_direction = SunCalculator.get_sun_direction_vector(azimuth, elevation)
-                
+
                 # Create shadow analyzer with building data
                 shadow_analyzer = ShadowAnalyzer(buildings, self.geometry_converter)
-                
+
                 # Perform shadow detection
                 is_shadowed, blocking_object = shadow_analyzer.is_point_in_shadow(
                     query_point,
                     sun_direction
                 )
-                
+
                 return ShadowQueryResponse(
                     is_shadowed=is_shadowed,
                     sun_azimuth=azimuth,
@@ -264,7 +264,7 @@ class ShadowAnalyzerAPI:
                     timestamp=dt.isoformat(),
                     message=None
                 )
-                
+
             except Exception as e:
                 carb.log_error(f"[ShadowAnalyzerAPI] Error processing shadow query: {e}")
                 raise HTTPException(status_code=500, detail=f"Error processing shadow query: {str(e)}")
@@ -272,7 +272,7 @@ class ShadowAnalyzerAPI:
     def run(self):
         """Run the API server."""
         carb.log_info(f"[ShadowAnalyzerAPI] Starting server on {self.host}:{self.port}")
-        
+
         config = uvicorn.Config(
             self.app,
             host=self.host,

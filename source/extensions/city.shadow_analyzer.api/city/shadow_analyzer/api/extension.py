@@ -24,24 +24,24 @@ class CityAnalyzerAPIExtension(omni.ext.IExt):
     def on_startup(self, ext_id):
         """Called when the extension starts up."""
         carb.log_info("[city.shadow_analyzer.api] Shadow Analyzer API extension starting up")
-        
+
         # Get settings
         settings = carb.settings.get_settings()
         host = settings.get("/exts/city.shadow_analyzer.api/host") or "0.0.0.0"
         port = settings.get("/exts/city.shadow_analyzer.api/port") or 8000
-        
+
         carb.log_info(f"[city.shadow_analyzer.api] Starting API server on {host}:{port}")
-        
+
         # Create and start API server
         self._api_server = ShadowAnalyzerAPI(host=host, port=port)
-        
+
         # Run server in separate thread to not block Kit
         self._server_thread = threading.Thread(
             target=self._run_server,
             daemon=True
         )
         self._server_thread.start()
-        
+
         carb.log_info("[city.shadow_analyzer.api] API server started successfully")
         carb.log_info(f"[city.shadow_analyzer.api] API documentation available at http://{host}:{port}/docs")
 
@@ -55,12 +55,12 @@ class CityAnalyzerAPIExtension(omni.ext.IExt):
     def on_shutdown(self):
         """Called when the extension shuts down."""
         carb.log_info("[city.shadow_analyzer.api] Shadow Analyzer API extension shutting down")
-        
+
         if self._api_server:
             self._api_server.shutdown()
             self._api_server = None
-        
+
         if self._server_thread:
             self._server_thread = None
-        
+
         carb.log_info("[city.shadow_analyzer.api] API server stopped")

@@ -103,7 +103,7 @@ async function checkShadow(lat, lon) {
       search_radius: 500
     })
   });
-  
+
   const data = await response.json();
   console.log(`Location is ${data.is_shadowed ? 'in shadow' : 'in sunlight'}`);
   return data;

@@ -136,9 +136,9 @@ async function checkShadow(lat, lon) {
       search_radius: 500
     })
   });
-  
+
   const data = await response.json();
-  
+
   if (data.is_shadowed) {
     console.log('🌙 Location is in shadow');
     if (data.sun_elevation < 0) {
@@ -149,7 +149,7 @@ async function checkShadow(lat, lon) {
   } else {
     console.log('☀️ Location is in sunlight');
   }
-  
+
   return data;
 }
 
@@ -167,7 +167,7 @@ def check_shadow(lat, lon, dt=None):
     """Check if a location is in shadow."""
     if dt is None:
         dt = datetime.now(timezone.utc)
-    
+
     response = requests.post(
         'http://localhost:8000/api/v1/shadow/query',
         json={
@@ -177,7 +177,7 @@ def check_shadow(lat, lon, dt=None):
             'search_radius': 500
         }
     )
-    
+
     data = response.json()
     return data
 
@@ -194,7 +194,7 @@ struct ShadowQuery: Codable {
     let latitude: Double
     let longitude: Double
     let searchRadius: Int = 500
-    
+
     enum CodingKeys: String, CodingKey {
         case latitude, longitude
         case searchRadius = "search_radius"
@@ -207,7 +207,7 @@ struct ShadowResponse: Codable {
     let sunElevation: Double
     let latitude: Double
     let longitude: Double
-    
+
     enum CodingKeys: String, CodingKey {
         case isShadowed = "is_shadowed"
         case sunAzimuth = "sun_azimuth"
@@ -221,13 +221,13 @@ func checkShadow(lat: Double, lon: Double) async throws -> ShadowResponse {
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    
+
     let query = ShadowQuery(latitude: lat, longitude: lon)
     request.httpBody = try JSONEncoder().encode(query)
-    
+
     let (data, _) = try await URLSession.shared.data(for: request)
     let response = try JSONDecoder().decode(ShadowResponse.self, from: data)
-    
+
     return response
 }
 ```
