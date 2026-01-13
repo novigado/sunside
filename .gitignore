@@ -37,4 +37,17 @@ deps/**/user.toml
 # Streaming EventTrace
 *.etli
 
-/source
+# Ignore source folder except our custom city shadow analyzer work
+# Negations must come before the wildcard patterns
+!/source/
+!/source/apps/
+!/source/extensions/
+!/source/extensions/city.shadow_analyzer.sun/
+!/source/extensions/city.shadow_analyzer.sun/**
+!/source/extensions/city.shadow_analyzer.ui/
+!/source/extensions/city.shadow_analyzer.ui/**
+!/source/apps/city.shadow_analyzer.kit.kit
+# Now ignore everything else in source
+/source/*
+/source/apps/*
+/source/extensions/*

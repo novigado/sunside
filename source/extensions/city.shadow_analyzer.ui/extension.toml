@@ -1,0 +1,22 @@
+[package]
+version = "0.1.0"
+authors = ["NVIDIA"]
+title = "City Shadow Analyzer - UI"
+description = "User interface for City Shadow Analyzer application"
+readme = "docs/README.md"
+category = "simulation"
+keywords = ["sun", "shadow", "city", "ui"]
+repository = ""
+
+[dependencies]
+"omni.kit.commands" = {}
+"omni.kit.usd.layers" = {}
+"omni.kit.window.extensions" = {}
+"omni.ui" = {}
+"omni.usd" = {}
+"city.shadow_analyzer.sun" = {}
+"omni.kit.raycast.query" = {}
+"omni.kit.viewport.utility" = {}
+
+[[python.module]]
+name = "city.shadow_analyzer.ui"

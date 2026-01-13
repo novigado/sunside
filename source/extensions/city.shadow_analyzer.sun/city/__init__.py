@@ -1,0 +1,1 @@
+"""City shadow analyzer package."""

@@ -1,0 +1,37 @@
+[package]
+# Semantic Versioning is used: https://semver.org/
+version = "0.1.0"
+
+# Lists people or organizations that are considered the "authors" of the package.
+authors = ["NVIDIA"]
+
+# The title and description fields are primarily for displaying extension info in UI
+title = "City Shadow Analyzer - Sun Position"
+description = "Calculates sun position based on date, time, and GPS coordinates"
+
+# Path (relative to the root) or content of readme markdown file for UI.
+readme = "docs/README.md"
+
+# One of categories for UI.
+category = "simulation"
+
+# Keywords for the extension
+keywords = ["sun", "solar", "position", "astronomy"]
+
+# Icon to show in the extension manager
+icon = "data/icon.png"
+
+# Preview image and video to show in the extension manager
+preview_image = "data/preview.png"
+
+# URL of the extension source repository.
+repository = ""
+
+# Use omni.ui to build simple UI
+[dependencies]
+"omni.kit.commands" = {}
+"omni.usd" = {}
+
+# Main python module this extension provides, it will be publicly available as "import city.shadow_analyzer.sun".
+[[python.module]]
+name = "city.shadow_analyzer.sun"
