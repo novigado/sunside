@@ -451,44 +451,44 @@ class BuildingGeometryConverter:
     def get_terrain_elevation_at_point(self, x: float, z: float) -> float:
         """
         Get terrain elevation at a specific scene coordinate by querying the terrain mesh.
-        
+
         Args:
             x: X coordinate in scene space
             z: Z coordinate in scene space
-            
+
         Returns:
             Elevation (Y value) at that point, or 0.0 if no terrain exists
         """
         terrain_prim = self.stage.GetPrimAtPath("/World/Terrain")
         if not terrain_prim or not terrain_prim.IsA(UsdGeom.Mesh):
             return 0.0
-        
+
         try:
             mesh = UsdGeom.Mesh(terrain_prim)
             points_attr = mesh.GetPointsAttr()
             if not points_attr:
                 return 0.0
-            
+
             points = points_attr.Get()
             if not points or len(points) == 0:
                 return 0.0
-            
+
             # Find the closest terrain vertex to the query point
             # This is a simple approach - could use interpolation for better accuracy
             min_dist_sq = float('inf')
             closest_elevation = 0.0
-            
+
             for point in points:
                 dx = point[0] - x
                 dz = point[2] - z
                 dist_sq = dx * dx + dz * dz
-                
+
                 if dist_sq < min_dist_sq:
                     min_dist_sq = dist_sq
                     closest_elevation = point[1]  # Y value is elevation
-            
+
             return closest_elevation
-            
+
         except Exception as e:
             carb.log_warn(f"[BuildingConverter] Error querying terrain elevation: {e}")
             return 0.0

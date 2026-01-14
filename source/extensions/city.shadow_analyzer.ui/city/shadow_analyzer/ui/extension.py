@@ -13,8 +13,8 @@ from datetime import datetime, timezone
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdLux
 from city.shadow_analyzer.sun import SunCalculator
 from city.shadow_analyzer.buildings import (
-    BuildingLoader, 
-    BuildingGeometryConverter, 
+    BuildingLoader,
+    BuildingGeometryConverter,
     ShadowAnalyzer,
     TerrainLoader,
     TerrainMeshGenerator
@@ -347,11 +347,11 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         print("=" * 80)
         print("BUTTON CLICKED! _load_buildings function was called")
         print("=" * 80)
-        
+
         # IMMEDIATE VISUAL FEEDBACK via status label (this works!)
         self._building_status_label.text = "⏳ Button clicked! Starting to load..."
         self._building_status_label.style = {"font_size": 12, "color": 0xFFFFFF00}  # Yellow
-        
+
         # Schedule the actual loading work to happen after UI refresh
         import omni.kit.app
         async def _do_load():
@@ -359,19 +359,19 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             self._load_buildings_button.enabled = False
             self._load_buildings_button.text = "⏳ Loading..."
             self._load_buildings_button.set_style({"background_color": 0xFF757575})
-            
+
             # Update status again
             self._building_status_label.text = "⏳ Loading scene from OpenStreetMap..."
-            
+
             # Give UI one more frame to update
             await omni.kit.app.get_app().next_update_async()
-            
+
             # Now do the actual work
             self._load_buildings_sync()
-        
+
         # Schedule it
         asyncio.ensure_future(_do_load())
-    
+
     def _load_buildings_sync(self):
         """Synchronous part of building loading."""
         carb.log_info("[Shadow Analyzer] ===== LOADING SCENE FROM OPENSTREETMAP =====")
@@ -407,7 +407,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 self._building_status_label.text = "No data found in this area"
                 self._building_status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
                 carb.log_warn("[Shadow Analyzer] No data found")
-                
+
                 # Restore button
                 self._load_buildings_button.enabled = True
                 self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
@@ -419,7 +419,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             if not stage:
                 self._building_status_label.text = "Error: No stage available"
                 self._building_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
-                
+
                 # Restore button
                 self._load_buildings_button.enabled = True
                 self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
@@ -478,7 +478,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             self._building_status_label.text = status_text
             self._building_status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
             carb.log_info(f"[Shadow Analyzer] Successfully loaded scene at ({self._latitude}, {self._longitude})")
-            
+
             # Restore button after success
             self._load_buildings_button.enabled = True
             self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
@@ -491,7 +491,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             carb.log_error(f"[Shadow Analyzer] {error_msg}")
             import traceback
             carb.log_error(traceback.format_exc())
-            
+
             # Restore button after error
             self._load_buildings_button.enabled = True
             self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
@@ -501,23 +501,23 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         """Load terrain elevation data (async wrapper)."""
         # Immediate status update
         self._terrain_status_label.text = "⏳ Button clicked! Starting to load terrain..."
-        
+
         # Schedule async work
         async def _do_load():
             # Update button after UI refresh
             self._load_terrain_button.enabled = False
             self._load_terrain_button.text = "⏳ Loading Terrain..."
             self._load_terrain_button.set_style({"background_color": 0xFF757575})  # Gray
-            
+
             # Wait for UI update
             await omni.kit.app.get_app().next_update_async()
-            
+
             # Do actual work
             self._load_terrain_sync()
-        
+
         # Schedule it
         asyncio.ensure_future(_do_load())
-    
+
     def _load_terrain_sync(self):
         """Synchronous part of terrain loading."""
         carb.log_info("[Shadow Analyzer] ===== LOADING TERRAIN ELEVATION DATA =====")
@@ -545,7 +545,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 self._terrain_status_label.text = "Error loading terrain data"
                 self._terrain_status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
                 carb.log_error("[Shadow Analyzer] Failed to load terrain data")
-                
+
                 # Restore button
                 self._load_terrain_button.enabled = True
                 self._load_terrain_button.text = "Load Terrain Elevation Data"
@@ -559,7 +559,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             if not stage:
                 self._terrain_status_label.text = "Error: No stage available"
                 self._terrain_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
-                
+
                 # Restore button
                 self._load_terrain_button.enabled = True
                 self._load_terrain_button.text = "Load Terrain Elevation Data"
@@ -584,7 +584,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             if success:
                 min_elev = elevation_grid.min()
                 max_elev = elevation_grid.max()
-                
+
                 # Check if buildings exist and need to be adjusted for terrain
                 buildings_prim = stage.GetPrimAtPath("/World/Buildings")
                 if buildings_prim and buildings_prim.IsValid():
@@ -593,7 +593,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     status_text = f"✓ Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m (buildings adjusted)"
                 else:
                     status_text = f"✓ Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m elevation"
-                
+
                 self._terrain_status_label.text = status_text
                 self._terrain_status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
                 carb.log_info(f"[Shadow Analyzer] Successfully loaded terrain")
@@ -613,7 +613,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             carb.log_error(f"[Shadow Analyzer] {error_msg}")
             import traceback
             carb.log_error(traceback.format_exc())
-            
+
             # Restore button after error
             self._load_terrain_button.enabled = True
             self._load_terrain_button.text = "Load Terrain Elevation Data"
@@ -987,34 +987,34 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             buildings_prim = stage.GetPrimAtPath("/World/Buildings")
             if not buildings_prim:
                 return
-            
+
             adjusted_count = 0
             for child in buildings_prim.GetAllChildren():
                 if not child.IsA(UsdGeom.Mesh):
                     continue
-                
+
                 mesh = UsdGeom.Mesh(child)
                 points_attr = mesh.GetPointsAttr()
                 if not points_attr:
                     continue
-                
+
                 points = list(points_attr.Get())
                 if not points:
                     continue
-                
+
                 # Detect how many bottom vertices (assumed to be first half at Y=0)
                 num_points = len(points)
                 num_base_verts = num_points // 2
-                
+
                 # Calculate average terrain elevation for this building
                 total_elevation = 0.0
                 for i in range(num_base_verts):
                     point = points[i]
                     terrain_elev = geometry_converter.get_terrain_elevation_at_point(point[0], point[2])
                     total_elevation += terrain_elev
-                
+
                 base_elevation = total_elevation / num_base_verts if num_base_verts > 0 else 0.0
-                
+
                 # Only adjust if building is at Y=0 (not already adjusted)
                 first_point_y = points[0][1]
                 if abs(first_point_y) < 0.1:  # Close to zero
@@ -1022,13 +1022,13 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     new_points = []
                     for point in points:
                         new_points.append(Gf.Vec3f(point[0], point[1] + base_elevation, point[2]))
-                    
+
                     mesh.GetPointsAttr().Set(new_points)
                     adjusted_count += 1
-            
+
             if adjusted_count > 0:
                 carb.log_info(f"[Shadow Analyzer] Adjusted {adjusted_count} buildings for terrain elevation")
-            
+
         except Exception as e:
             carb.log_error(f"[Shadow Analyzer] Error adjusting buildings for terrain: {e}")
 
@@ -1036,23 +1036,23 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         """Load both terrain and buildings together (async wrapper)."""
         # Immediate status update
         self._map_status_label.text = "⏳ Starting to load map data..."
-        
+
         # Schedule async work
         async def _do_load():
             # Update button after UI refresh
             self._load_map_button.enabled = False
             self._load_map_button.text = "⏳ Loading Map..."
             self._load_map_button.set_style({"background_color": 0xFF757575})  # Gray
-            
+
             # Wait for UI update
             await omni.kit.app.get_app().next_update_async()
-            
+
             # Do actual work
             self._load_map_with_terrain_sync()
-        
+
         # Schedule it
         asyncio.ensure_future(_do_load())
-    
+
     def _load_map_with_terrain_sync(self):
         """Synchronous part of combined map and terrain loading."""
         carb.log_info("[Shadow Analyzer] ===== LOADING MAP WITH TERRAIN =====")
@@ -1179,7 +1179,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 status_parts.append(f"{len(buildings_data)} buildings")
             if roads_data:
                 status_parts.append(f"{len(roads_data)} roads")
-            
+
             status_text = f"✓ Loaded {', '.join(status_parts)} + terrain ({min_elev:.1f}m-{max_elev:.1f}m) at ({latitude:.5f}, {longitude:.5f})"
             self._map_status_label.text = status_text
             self._map_status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
@@ -1200,4 +1200,4 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         """Restore map button to original state."""
         self._load_map_button.enabled = True
         self._load_map_button.text = "Load Map with Terrain & Buildings"
-        self._load_map_button.set_style({"background_color": 0xFFFF9800"})
+        self._load_map_button.set_style({"background_color": 0xFFFF9800})

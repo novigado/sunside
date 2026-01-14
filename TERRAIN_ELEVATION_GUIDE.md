@@ -72,7 +72,7 @@ meters_per_lat_degree = 111000.0
 meters_per_lon_degree = 111000.0 * cos(latitude)
 
 x = lon_diff * meters_per_lon_degree  # X = East/West
-z = lat_diff * meters_per_lat_degree  # Z = North/South  
+z = lat_diff * meters_per_lat_degree  # Z = North/South
 y = elevation                          # Y = Height
 ```
 
@@ -155,7 +155,7 @@ To test terrain elevation:
 
 1. **Flat Location**: New York City (40.7128, -74.0060)
    - Should show minimal elevation change
-   
+
 2. **Hilly Location**: San Francisco (37.7749, -122.4194)
    - Should show significant terrain variation
 
@@ -166,6 +166,6 @@ Compare shadow results with and without terrain loaded to see the effect.
 
 ---
 
-**Version**: 0.1.0  
-**Date**: January 14, 2026  
+**Version**: 0.1.0
+**Date**: January 14, 2026
 **Status**: ✅ Implemented and tested
