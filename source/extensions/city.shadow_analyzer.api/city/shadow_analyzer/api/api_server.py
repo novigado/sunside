@@ -103,7 +103,7 @@ class ShadowAnalyzerAPI:
         self.sun_calculator = SunCalculator()
         self.geometry_converter = None  # Initialized on first use
         self.shadow_analyzer = None  # Initialized on first use
-        
+
         # Queue for main-thread USD operations
         self.request_queue = queue.Queue()
         self.result_map = {}  # Maps request_id -> (is_shadowed, blocking_object, error_msg)
@@ -116,7 +116,7 @@ class ShadowAnalyzerAPI:
         # Server control
         self._server = None
         self._shutdown_event = threading.Event()
-    
+
     def process_main_thread_queue(self):
         """
         Process queued shadow detection requests on the main thread.
@@ -128,19 +128,19 @@ class ShadowAnalyzerAPI:
             if queue_size > 0:
                 print(f"[ShadowAnalyzerAPI] Processing {queue_size} items from queue on main thread")
                 carb.log_info(f"[ShadowAnalyzerAPI] Processing {queue_size} items from queue on main thread")
-            
+
             while not self.request_queue.empty():
                 try:
                     task = self.request_queue.get_nowait()
                     request_id, latitude, longitude, azimuth, elevation = task
                     print(f"[ShadowAnalyzerAPI] Processing request {request_id} on main thread")
                     carb.log_info(f"[ShadowAnalyzerAPI] Processing request {request_id} on main thread")
-                    
+
                     carb.log_info(f"[ShadowAnalyzerAPI] Processing request {request_id} on main thread")
-                    
+
                     # Perform shadow check on main thread
                     self._perform_shadow_check(request_id, latitude, longitude, azimuth, elevation)
-                    
+
                 except queue.Empty:
                     break
                 except Exception as e:
@@ -149,8 +149,8 @@ class ShadowAnalyzerAPI:
                     carb.log_error(f"[ShadowAnalyzerAPI] Traceback: {traceback.format_exc()}")
         except Exception as e:
             carb.log_error(f"[ShadowAnalyzerAPI] Error in process_main_thread_queue: {e}")
-    
-    def _perform_shadow_check(self, request_id: int, latitude: float, longitude: float, 
+
+    def _perform_shadow_check(self, request_id: int, latitude: float, longitude: float,
                               azimuth: float, elevation: float):
         """
         Perform shadow check using USD ray casting. Runs on main thread.
@@ -161,46 +161,46 @@ class ShadowAnalyzerAPI:
             if not stage:
                 self.result_map[request_id] = (False, None, "USD stage not available")
                 return
-            
+
             # Initialize geometry converter if needed
             if self.geometry_converter is None:
                 self.geometry_converter = BuildingGeometryConverter(stage)
                 print("[ShadowAnalyzerAPI] Initialized BuildingGeometryConverter")
                 carb.log_info("[ShadowAnalyzerAPI] Initialized BuildingGeometryConverter")
-            
+
             # Try to load reference point from existing buildings
             print("[ShadowAnalyzerAPI] Attempting to load reference point from scene...")
             if not self.geometry_converter.load_reference_point_from_scene():
                 print("[ShadowAnalyzerAPI] load_reference_point_from_scene returned False")
                 self.result_map[request_id] = (False, None, "No buildings loaded. Use the 'Import Map' button in the UI to load buildings first.")
                 return
-            
+
             print("[ShadowAnalyzerAPI] Reference point loaded successfully!")
-            
+
             # Convert GPS to scene coordinates
             query_x, query_z = self.geometry_converter.gps_to_scene_coords(latitude, longitude)
             query_point = Gf.Vec3f(query_x, 1.5, query_z)  # 1.5m height (person standing)
-            
+
             # Get sun direction vector
             sun_dir_tuple = self.sun_calculator.get_sun_direction_vector(azimuth, elevation)
             sun_direction = Gf.Vec3f(sun_dir_tuple[0], sun_dir_tuple[1], sun_dir_tuple[2])
-            
+
             # Initialize shadow analyzer if needed
             if self.shadow_analyzer is None:
                 self.shadow_analyzer = ShadowAnalyzer(stage)
                 carb.log_info("[ShadowAnalyzerAPI] Initialized ShadowAnalyzer")
-            
+
             # Perform ray casting
             is_shadowed, blocking_object = self.shadow_analyzer.is_point_in_shadow(
                 query_point,
                 sun_direction,
                 max_distance=10000.0
             )
-            
+
             # Store result
             self.result_map[request_id] = (is_shadowed, blocking_object, None)
             carb.log_info(f"[ShadowAnalyzerAPI] Shadow check {request_id} complete: shadowed={is_shadowed}")
-            
+
         except Exception as e:
             carb.log_error(f"[ShadowAnalyzerAPI] Error in shadow check {request_id}: {e}")
             import traceback
@@ -266,7 +266,7 @@ class ShadowAnalyzerAPI:
         async def query_shadow(request: ShadowQueryRequest):
             """
             Query whether a GPS location is in shadow at a given time.
-            
+
             Performs ray-cast shadow detection using building geometry.
             Buildings must be loaded via UI first using "Import Map" button.
             """
@@ -300,16 +300,16 @@ class ShadowAnalyzerAPI:
                         timestamp=dt.isoformat(),
                         message=f"Sun is below horizon (nighttime). Elevation: {elevation:.1f}°"
                     )
-                
+
                 # Queue the shadow check to be processed on main thread
                 # Store request data in a simple dict
                 with self.request_lock:
                     request_id = self.next_request_id
                     self.next_request_id += 1
-                
+
                 print(f"[ShadowAnalyzerAPI] Queuing shadow check request {request_id}")
                 carb.log_info(f"[ShadowAnalyzerAPI] Queuing shadow check request {request_id}")
-                
+
                 # Queue: (request_id, lat, lon, sun_azimuth, sun_elevation)
                 self.request_queue.put((
                     request_id,
@@ -318,7 +318,7 @@ class ShadowAnalyzerAPI:
                     azimuth,
                     elevation
                 ))
-                
+
                 # Wait for result (with timeout)
                 timeout = 10.0  # 10 second timeout
                 start_time = time.time()
@@ -326,7 +326,7 @@ class ShadowAnalyzerAPI:
                     if request_id in self.result_map:
                         # Got result!
                         is_shadowed, blocking_object, error_msg = self.result_map.pop(request_id)
-                        
+
                         if error_msg:
                             return ShadowQueryResponse(
                                 is_shadowed=False,
@@ -338,16 +338,16 @@ class ShadowAnalyzerAPI:
                                 timestamp=dt.isoformat(),
                                 message=f"Error during shadow detection: {error_msg}"
                             )
-                        
+
                         # Extract building name if available
                         building_name = None
                         if blocking_object:
                             parts = blocking_object.split("/")
                             if len(parts) > 0:
                                 building_name = parts[-1]
-                        
+
                         result_msg = "Point is in shadow" if is_shadowed else "Point has direct sunlight"
-                        
+
                         return ShadowQueryResponse(
                             is_shadowed=is_shadowed,
                             sun_azimuth=azimuth,
@@ -358,10 +358,10 @@ class ShadowAnalyzerAPI:
                             timestamp=dt.isoformat(),
                             message=result_msg
                         )
-                    
+
                     # Wait a bit before checking again
                     await asyncio.sleep(0.05)  # 50ms
-                
+
                 # Timeout
                 carb.log_warn(f"[ShadowAnalyzerAPI] Request {request_id} timed out")
                 return ShadowQueryResponse(
@@ -387,7 +387,7 @@ class ShadowAnalyzerAPI:
     def run(self):
         """Run the API server in a background thread."""
         carb.log_info(f"[ShadowAnalyzerAPI] Starting server on {self.host}:{self.port}")
-        
+
         # Create uvicorn config
         config = uvicorn.Config(
             self.app,
@@ -399,7 +399,7 @@ class ShadowAnalyzerAPI:
             lifespan="off"
         )
         self._server = uvicorn.Server(config)
-        
+
         # Run server in a separate thread to avoid asyncio event loop conflicts
         def run_server():
             """Thread target to run the uvicorn server."""
@@ -411,7 +411,7 @@ class ShadowAnalyzerAPI:
                 loop.run_until_complete(self._server.serve())
             finally:
                 loop.close()
-        
+
         server_thread = threading.Thread(target=run_server, daemon=True, name="APIServerThread")
         server_thread.start()
         carb.log_info("[ShadowAnalyzerAPI] Server thread started")

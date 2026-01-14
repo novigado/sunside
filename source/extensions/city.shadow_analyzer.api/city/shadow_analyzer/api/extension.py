@@ -47,23 +47,23 @@ class CityAnalyzerAPIExtension(omni.ext.IExt):
 
         carb.log_info("[city.shadow_analyzer.api] API server started successfully")
         carb.log_info(f"[city.shadow_analyzer.api] API documentation available at http://{host}:{port}/docs")
-        
+
         # Subscribe to update events to process USD operations on main thread
         update_stream = omni.kit.app.get_app().get_update_event_stream()
         self._update_stream = update_stream.create_subscription_to_pop(
             self._on_update, name="city.shadow_analyzer.api"
         )
         carb.log_info("[city.shadow_analyzer.api] Subscribed to update stream for main-thread processing")
-    
+
     def _on_update(self, event):
         """Called every frame on the main thread. Process queued USD operations here."""
         self._update_counter += 1
-        
+
         # Log every 300 frames (roughly every 5 seconds at 60fps) to confirm update loop is working
         if self._update_counter % 300 == 0:
             print(f"[city.shadow_analyzer.api] Update loop is running (frame {self._update_counter})")
             carb.log_info(f"[city.shadow_analyzer.api] Update loop is running (frame {self._update_counter})")
-        
+
         if self._api_server:
             self._api_server.process_main_thread_queue()
 
@@ -77,7 +77,7 @@ class CityAnalyzerAPIExtension(omni.ext.IExt):
     def on_shutdown(self):
         """Called when the extension shuts down."""
         carb.log_info("[city.shadow_analyzer.api] Shadow Analyzer API extension shutting down")
-        
+
         # Unsubscribe from updates
         if self._update_stream:
             self._update_stream.unsubscribe()
