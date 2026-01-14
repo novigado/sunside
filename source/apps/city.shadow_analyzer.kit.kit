@@ -71,6 +71,7 @@ template_name = "kit_base_editor"
 # City Shadow Analyzer Extensions
 "city.shadow_analyzer.sun" = {}  # Sun position calculation
 "city.shadow_analyzer.buildings" = { order = -100 }  # OpenStreetMap building loader (load early)
+"city.shadow_analyzer.nucleus" = {}  # Nucleus server integration for caching
 "city.shadow_analyzer.ui" = {}  # Main UI controls
 "city.shadow_analyzer.api" = {}  # REST API server
 
@@ -83,6 +84,10 @@ viewport.autoFrame.mode = "first_open"  # Auto frame the first time the viewport
 # API Server Configuration
 exts."city.shadow_analyzer.api".host = "0.0.0.0"
 exts."city.shadow_analyzer.api".port = 8000
+
+# Nucleus Configuration
+exts."city.shadow_analyzer.nucleus".nucleus_server = "omniverse://localhost"
+exts."city.shadow_analyzer.nucleus".project_path = "/Projects/CityData"
 
 crashreporter.compressDumpFiles = true
 exts."omni.kit.material.library".ui_show_list = ["OmniPBR", "OmniGlass", "OmniSurface", "USD Preview Surface", "OpenPBR Surface"]

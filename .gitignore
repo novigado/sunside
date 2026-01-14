@@ -50,6 +50,8 @@ deps/**/user.toml
 !/source/extensions/city.shadow_analyzer.buildings/**
 !/source/extensions/city.shadow_analyzer.api/
 !/source/extensions/city.shadow_analyzer.api/**
+!/source/extensions/city.shadow_analyzer.nucleus/
+!/source/extensions/city.shadow_analyzer.nucleus/**
 !/source/apps/city.shadow_analyzer.kit.kit
 !/source/apps/city.shadow_analyzer.api.kit
 # Now ignore everything else in source
