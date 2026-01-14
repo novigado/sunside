@@ -12,7 +12,13 @@ import carb.events
 from datetime import datetime, timezone
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdLux
 from city.shadow_analyzer.sun import SunCalculator
-from city.shadow_analyzer.buildings import BuildingLoader, BuildingGeometryConverter, ShadowAnalyzer
+from city.shadow_analyzer.buildings import (
+    BuildingLoader, 
+    BuildingGeometryConverter, 
+    ShadowAnalyzer,
+    TerrainLoader,
+    TerrainMeshGenerator
+)
 import omni.kit.raycast.query
 from omni.kit.viewport.utility import get_viewport_from_window_name
 
@@ -28,7 +34,8 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._window = None
         self._sun_calculator = SunCalculator()
         self._building_loader = BuildingLoader()
-        # Note: BuildingGeometryConverter is created when needed (requires stage)
+        self._terrain_loader = TerrainLoader()
+        # Note: BuildingGeometryConverter and TerrainMeshGenerator are created when needed (requires stage)
 
         # Default location (New York City, USA)
         self._latitude = 40.7128
@@ -151,6 +158,15 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
                     self._building_status_label = ui.Label("No buildings loaded",
                                                            style={"font_size": 12, "color": 0x80FFFFFF})
+
+                    self._load_terrain_button = ui.Button("Load Terrain Elevation Data",
+                             clicked_fn=self._load_terrain,
+                             height=40,
+                             style={"background_color": 0xFF8BC34A},
+                             tooltip="Load terrain elevation from Open-Elevation API")
+
+                    self._terrain_status_label = ui.Label("No terrain loaded",
+                                                          style={"font_size": 12, "color": 0x80FFFFFF})
 
                     ui.Button("Create Test Scene",
                              clicked_fn=self._create_test_scene,
@@ -489,6 +505,119 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             self._load_buildings_button.enabled = True
             self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
             self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
+
+    def _load_terrain(self):
+        """Load terrain elevation data (async wrapper)."""
+        # Immediate status update
+        self._terrain_status_label.text = "⏳ Button clicked! Starting to load terrain..."
+        
+        # Schedule async work
+        async def _do_load():
+            # Update button after UI refresh
+            self._load_terrain_button.enabled = False
+            self._load_terrain_button.text = "⏳ Loading Terrain..."
+            self._load_terrain_button.set_style({"background_color": 0xFF757575})  # Gray
+            
+            # Wait for UI update
+            await omni.kit.app.get_app().next_update_async()
+            
+            # Do actual work
+            self._load_terrain_sync()
+        
+        # Schedule it
+        asyncio.ensure_future(_do_load())
+    
+    def _load_terrain_sync(self):
+        """Synchronous part of terrain loading."""
+        carb.log_info("[Shadow Analyzer] ===== LOADING TERRAIN ELEVATION DATA =====")
+
+        # Update status
+        self._terrain_status_label.text = "⏳ Loading terrain elevation data..."
+        self._terrain_status_label.style = {"font_size": 12, "color": 0xFFFFFF00}  # Yellow
+
+        # Get current location from UI
+        latitude = self._lat_field.model.get_value_as_float()
+        longitude = self._lon_field.model.get_value_as_float()
+
+        carb.log_info(f"[Shadow Analyzer] Loading terrain at ({latitude}, {longitude})")
+
+        try:
+            # Load elevation grid (500m radius, 20x20 grid)
+            result = self._terrain_loader.load_elevation_grid(
+                latitude,
+                longitude,
+                radius_m=500.0,
+                grid_resolution=20
+            )
+
+            if result is None:
+                self._terrain_status_label.text = "Error loading terrain data"
+                self._terrain_status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
+                carb.log_error("[Shadow Analyzer] Failed to load terrain data")
+                
+                # Restore button
+                self._load_terrain_button.enabled = True
+                self._load_terrain_button.text = "Load Terrain Elevation Data"
+                self._load_terrain_button.set_style({"background_color": 0xFF8BC34A})
+                return
+
+            elevation_grid, lat_spacing, lon_spacing = result
+
+            # Get stage
+            stage = omni.usd.get_context().get_stage()
+            if not stage:
+                self._terrain_status_label.text = "Error: No stage available"
+                self._terrain_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+                
+                # Restore button
+                self._load_terrain_button.enabled = True
+                self._load_terrain_button.text = "Load Terrain Elevation Data"
+                self._load_terrain_button.set_style({"background_color": 0xFF8BC34A})
+                return
+
+            # Create terrain mesh generator
+            terrain_generator = TerrainMeshGenerator(stage)
+
+            # Create terrain mesh
+            carb.log_info(f"[Shadow Analyzer] Creating terrain mesh...")
+            success = terrain_generator.create_terrain_mesh(
+                elevation_grid,
+                latitude,
+                longitude,
+                lat_spacing,
+                lon_spacing,
+                latitude,  # Use current location as reference
+                longitude
+            )
+
+            if success:
+                min_elev = elevation_grid.min()
+                max_elev = elevation_grid.max()
+                status_text = f"✓ Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m elevation"
+                self._terrain_status_label.text = status_text
+                self._terrain_status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
+                carb.log_info(f"[Shadow Analyzer] Successfully loaded terrain")
+            else:
+                self._terrain_status_label.text = "Error creating terrain mesh"
+                self._terrain_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+
+            # Restore button
+            self._load_terrain_button.enabled = True
+            self._load_terrain_button.text = "Load Terrain Elevation Data"
+            self._load_terrain_button.set_style({"background_color": 0xFF8BC34A})
+
+        except Exception as e:
+            error_msg = f"Error loading terrain: {str(e)}"
+            self._terrain_status_label.text = error_msg
+            self._terrain_status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
+            carb.log_error(f"[Shadow Analyzer] {error_msg}")
+            import traceback
+            carb.log_error(traceback.format_exc())
+            
+            # Restore button after error
+            self._load_terrain_button.enabled = True
+            self._load_terrain_button.text = "Load Terrain Elevation Data"
+            self._load_terrain_button.set_style({"background_color": 0xFF8BC34A})
 
     def _toggle_query_mode(self):
         """Toggle query mode on/off."""

@@ -39,6 +39,7 @@ name = "city.shadow_analyzer.buildings"
 [python.pipapi]
 requirements = [
     "requests",
-    "overpy"
+    "overpy",
+    "numpy"
 ]
 use_online_index = true
