@@ -37,14 +37,14 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._terrain_loader = TerrainLoader()
         # Note: BuildingGeometryConverter and TerrainMeshGenerator are created when needed (requires stage)
 
-        # Default location (New York City, USA)
-        self._latitude = 40.7128
-        self._longitude = -74.0060
+        # Default location (San Francisco, USA - good for testing terrain with hills)
+        self._latitude = 37.7749
+        self._longitude = -122.4194
         self._current_time = datetime.now(timezone.utc)
 
         # Query point location (default same as observer location)
-        self._query_latitude = 40.7128
-        self._query_longitude = -74.0060
+        self._query_latitude = 37.7749
+        self._query_longitude = -122.4194
 
         # Scene elements
         self._sun_light_prim_path = "/World/SunLight"
