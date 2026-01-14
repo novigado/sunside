@@ -150,23 +150,14 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                              height=40,
                              style={"background_color": 0xFF4CAF50})
 
-                    self._load_buildings_button = ui.Button("Load Buildings from OpenStreetMap",
-                             clicked_fn=self._load_buildings,
+                    self._load_map_button = ui.Button("Load Map with Terrain & Buildings",
+                             clicked_fn=self._load_map_with_terrain,
                              height=40,
                              style={"background_color": 0xFFFF9800},
-                             tooltip="Click to load buildings and roads from OpenStreetMap")
+                             tooltip="Load OpenStreetMap buildings, roads, and terrain elevation data")
 
-                    self._building_status_label = ui.Label("No buildings loaded",
-                                                           style={"font_size": 12, "color": 0x80FFFFFF})
-
-                    self._load_terrain_button = ui.Button("Load Terrain Elevation Data",
-                             clicked_fn=self._load_terrain,
-                             height=40,
-                             style={"background_color": 0xFF8BC34A},
-                             tooltip="Load terrain elevation from Open-Elevation API")
-
-                    self._terrain_status_label = ui.Label("No terrain loaded",
-                                                          style={"font_size": 12, "color": 0x80FFFFFF})
+                    self._map_status_label = ui.Label("No map data loaded",
+                                                      style={"font_size": 12, "color": 0x80FFFFFF})
 
                     ui.Button("Create Test Scene",
                              clicked_fn=self._create_test_scene,
@@ -593,7 +584,16 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             if success:
                 min_elev = elevation_grid.min()
                 max_elev = elevation_grid.max()
-                status_text = f"✓ Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m elevation"
+                
+                # Check if buildings exist and need to be adjusted for terrain
+                buildings_prim = stage.GetPrimAtPath("/World/Buildings")
+                if buildings_prim and buildings_prim.IsValid():
+                    carb.log_info(f"[Shadow Analyzer] Buildings exist - adjusting for terrain elevation...")
+                    self._adjust_buildings_for_terrain(stage)
+                    status_text = f"✓ Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m (buildings adjusted)"
+                else:
+                    status_text = f"✓ Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m elevation"
+                
                 self._terrain_status_label.text = status_text
                 self._terrain_status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
                 carb.log_info(f"[Shadow Analyzer] Successfully loaded terrain")
@@ -979,3 +979,225 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         plane.CreateDisplayColorAttr([Gf.Vec3f(0.2, 0.6, 0.2)])
 
         carb.log_info("[Shadow Analyzer] Created reference grid (200m x 200m)")
+
+    def _adjust_buildings_for_terrain(self, stage):
+        """Adjust existing buildings to sit on terrain instead of Y=0."""
+        try:
+            geometry_converter = BuildingGeometryConverter(stage)
+            buildings_prim = stage.GetPrimAtPath("/World/Buildings")
+            if not buildings_prim:
+                return
+            
+            adjusted_count = 0
+            for child in buildings_prim.GetAllChildren():
+                if not child.IsA(UsdGeom.Mesh):
+                    continue
+                
+                mesh = UsdGeom.Mesh(child)
+                points_attr = mesh.GetPointsAttr()
+                if not points_attr:
+                    continue
+                
+                points = list(points_attr.Get())
+                if not points:
+                    continue
+                
+                # Detect how many bottom vertices (assumed to be first half at Y=0)
+                num_points = len(points)
+                num_base_verts = num_points // 2
+                
+                # Calculate average terrain elevation for this building
+                total_elevation = 0.0
+                for i in range(num_base_verts):
+                    point = points[i]
+                    terrain_elev = geometry_converter.get_terrain_elevation_at_point(point[0], point[2])
+                    total_elevation += terrain_elev
+                
+                base_elevation = total_elevation / num_base_verts if num_base_verts > 0 else 0.0
+                
+                # Only adjust if building is at Y=0 (not already adjusted)
+                first_point_y = points[0][1]
+                if abs(first_point_y) < 0.1:  # Close to zero
+                    # Adjust all vertices by base_elevation
+                    new_points = []
+                    for point in points:
+                        new_points.append(Gf.Vec3f(point[0], point[1] + base_elevation, point[2]))
+                    
+                    mesh.GetPointsAttr().Set(new_points)
+                    adjusted_count += 1
+            
+            if adjusted_count > 0:
+                carb.log_info(f"[Shadow Analyzer] Adjusted {adjusted_count} buildings for terrain elevation")
+            
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] Error adjusting buildings for terrain: {e}")
+
+    def _load_map_with_terrain(self):
+        """Load both terrain and buildings together (async wrapper)."""
+        # Immediate status update
+        self._map_status_label.text = "⏳ Starting to load map data..."
+        
+        # Schedule async work
+        async def _do_load():
+            # Update button after UI refresh
+            self._load_map_button.enabled = False
+            self._load_map_button.text = "⏳ Loading Map..."
+            self._load_map_button.set_style({"background_color": 0xFF757575})  # Gray
+            
+            # Wait for UI update
+            await omni.kit.app.get_app().next_update_async()
+            
+            # Do actual work
+            self._load_map_with_terrain_sync()
+        
+        # Schedule it
+        asyncio.ensure_future(_do_load())
+    
+    def _load_map_with_terrain_sync(self):
+        """Synchronous part of combined map and terrain loading."""
+        carb.log_info("[Shadow Analyzer] ===== LOADING MAP WITH TERRAIN =====")
+
+        # Get current location from UI
+        latitude = self._lat_field.model.get_value_as_float()
+        longitude = self._lon_field.model.get_value_as_float()
+
+        try:
+            # Step 1: Load terrain elevation data
+            carb.log_info(f"[Shadow Analyzer] Step 1/2: Loading terrain elevation...")
+            self._map_status_label.text = "⏳ Step 1/2: Loading terrain elevation..."
+            self._map_status_label.style = {"font_size": 12, "color": 0xFFFFFF00}  # Yellow
+
+            terrain_result = self._terrain_loader.load_elevation_grid(
+                latitude,
+                longitude,
+                radius_m=500.0,
+                grid_resolution=20
+            )
+
+            if terrain_result is None:
+                self._map_status_label.text = "❌ Error loading terrain data"
+                self._map_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+                self._restore_map_button()
+                return
+
+            elevation_grid, lat_spacing, lon_spacing = terrain_result
+
+            # Get stage
+            stage = omni.usd.get_context().get_stage()
+            if not stage:
+                self._map_status_label.text = "❌ Error: No stage available"
+                self._map_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+                self._restore_map_button()
+                return
+
+            # Create terrain mesh
+            terrain_generator = TerrainMeshGenerator(stage)
+            terrain_success = terrain_generator.create_terrain_mesh(
+                elevation_grid,
+                latitude,
+                longitude,
+                lat_spacing,
+                lon_spacing,
+                latitude,
+                longitude
+            )
+
+            if not terrain_success:
+                self._map_status_label.text = "❌ Error creating terrain mesh"
+                self._map_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+                self._restore_map_button()
+                return
+
+            min_elev = elevation_grid.min()
+            max_elev = elevation_grid.max()
+            carb.log_info(f"[Shadow Analyzer] Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m")
+
+            # Step 2: Load buildings and roads
+            carb.log_info(f"[Shadow Analyzer] Step 2/2: Loading buildings and roads...")
+            self._map_status_label.text = "⏳ Step 2/2: Loading buildings and roads..."
+
+            # Update internal coordinates
+            self._latitude = latitude
+            self._longitude = longitude
+
+            # Clear cache for fresh data
+            self._building_loader.clear_cache()
+
+            # Load comprehensive scene data
+            scene_data = self._building_loader.load_scene_data(
+                latitude,
+                longitude,
+                radius_km=0.5
+            )
+
+            buildings_data = scene_data.get("buildings", [])
+            roads_data = scene_data.get("roads", [])
+
+            if not buildings_data and not roads_data:
+                self._map_status_label.text = f"✓ Terrain loaded, but no buildings/roads found (elevation: {min_elev:.1f}m-{max_elev:.1f}m)"
+                self._map_status_label.style = {"font_size": 12, "color": 0xFFFFAA00}
+                self._restore_map_button()
+                return
+
+            # Create geometry converter
+            geometry_converter = BuildingGeometryConverter(stage)
+
+            # Clear existing scene elements
+            for path in ["/World/Buildings", "/World/Roads", "/World/Ground"]:
+                prim = stage.GetPrimAtPath(path)
+                if prim:
+                    stage.RemovePrim(path)
+
+            # Create ground plane
+            geometry_converter.create_ground_plane(
+                latitude,
+                longitude,
+                size=1000.0
+            )
+
+            # Create roads
+            if roads_data:
+                carb.log_info(f"[Shadow Analyzer] Creating {len(roads_data)} roads...")
+                geometry_converter.create_roads_from_data(
+                    roads_data,
+                    latitude,
+                    longitude
+                )
+
+            # Create buildings (they will automatically sit on terrain)
+            if buildings_data:
+                carb.log_info(f"[Shadow Analyzer] Creating {len(buildings_data)} buildings on terrain...")
+                geometry_converter.create_buildings_from_data(
+                    buildings_data,
+                    latitude,
+                    longitude
+                )
+
+            # Success!
+            status_parts = []
+            if buildings_data:
+                status_parts.append(f"{len(buildings_data)} buildings")
+            if roads_data:
+                status_parts.append(f"{len(roads_data)} roads")
+            
+            status_text = f"✓ Loaded {', '.join(status_parts)} + terrain ({min_elev:.1f}m-{max_elev:.1f}m) at ({latitude:.5f}, {longitude:.5f})"
+            self._map_status_label.text = status_text
+            self._map_status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
+            carb.log_info(f"[Shadow Analyzer] Successfully loaded map with terrain")
+
+            self._restore_map_button()
+
+        except Exception as e:
+            error_msg = f"❌ Error loading map: {str(e)}"
+            self._map_status_label.text = error_msg
+            self._map_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+            carb.log_error(f"[Shadow Analyzer] {error_msg}")
+            import traceback
+            carb.log_error(traceback.format_exc())
+            self._restore_map_button()
+
+    def _restore_map_button(self):
+        """Restore map button to original state."""
+        self._load_map_button.enabled = True
+        self._load_map_button.text = "Load Map with Terrain & Buildings"
+        self._load_map_button.set_style({"background_color": 0xFFFF9800"})
