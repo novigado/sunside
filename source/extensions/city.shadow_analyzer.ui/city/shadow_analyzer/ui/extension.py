@@ -1,5 +1,6 @@
 """Main UI extension for City Shadow Analyzer."""
 
+import asyncio
 import omni.ext
 import omni.ui as ui
 import omni.usd
@@ -339,15 +340,35 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         print("=" * 80)
         print("BUTTON CLICKED! _load_buildings function was called")
         print("=" * 80)
+        
+        # IMMEDIATE VISUAL FEEDBACK via status label (this works!)
+        self._building_status_label.text = "⏳ Button clicked! Starting to load..."
+        self._building_status_label.style = {"font_size": 12, "color": 0xFFFFFF00}  # Yellow
+        
+        # Schedule the actual loading work to happen after UI refresh
+        import omni.kit.app
+        async def _do_load():
+            # Now update button (after UI has had a chance to refresh)
+            self._load_buildings_button.enabled = False
+            self._load_buildings_button.text = "⏳ Loading..."
+            self._load_buildings_button.set_style({"background_color": 0xFF757575})
+            
+            # Update status again
+            self._building_status_label.text = "⏳ Loading scene from OpenStreetMap..."
+            
+            # Give UI one more frame to update
+            await omni.kit.app.get_app().next_update_async()
+            
+            # Now do the actual work
+            self._load_buildings_sync()
+        
+        # Schedule it
+        asyncio.ensure_future(_do_load())
+    
+    def _load_buildings_sync(self):
+        """Synchronous part of building loading."""
         carb.log_info("[Shadow Analyzer] ===== LOADING SCENE FROM OPENSTREETMAP =====")
         carb.log_info("[Shadow Analyzer] Button clicked - starting load process")
-
-        # IMMEDIATE VISUAL FEEDBACK: Disable button and change appearance
-        print("Attempting to disable button and change its appearance...")
-        self._load_buildings_button.enabled = False
-        self._load_buildings_button.text = "⏳ Loading..."
-        self._load_buildings_button.set_style({"background_color": 0xFF757575})  # Gray during loading
-        print("Button appearance changed!")
 
         # Update status
         self._building_status_label.text = "⏳ Loading scene from OpenStreetMap..."
