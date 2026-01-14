@@ -48,7 +48,9 @@
                 "command": "${workspaceRoot}${/}repo.bat"
             },
             "args": [
-                "launch"
+                "launch",
+                "--",
+                "source/apps/city.shadow_analyzer.kit.kit"
             ],
             "group": "none",
             "presentation": {
@@ -65,7 +67,9 @@
             },
             "args": [
                 "launch",
-                "-d"
+                "-d",
+                "--",
+                "source/apps/city.shadow_analyzer.kit.kit"
             ],
             "group": "none",
             "presentation": {

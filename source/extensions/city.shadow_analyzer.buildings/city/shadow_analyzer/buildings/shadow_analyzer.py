@@ -55,15 +55,16 @@ class ShadowAnalyzer:
 
         carb.log_info(f"[ShadowAnalyzer] Casting ray from {ray_origin} toward sun (dir: {ray_direction})")
 
-        # Check for intersection with buildings
+        # Check for intersection with buildings and terrain
         hit_result = self._cast_ray_against_buildings(ray_origin, ray_direction, max_distance)
 
         if hit_result:
             hit_distance, hit_path = hit_result
-            carb.log_info(f"[ShadowAnalyzer] Ray hit {hit_path} at distance {hit_distance:.2f}m - SHADOW")
+            object_type = "terrain" if hit_path == "/World/Terrain" else "building"
+            carb.log_info(f"[ShadowAnalyzer] Ray hit {object_type} at {hit_path} at distance {hit_distance:.2f}m - SHADOW")
             return True, hit_path
         else:
-            carb.log_info(f"[ShadowAnalyzer] Ray did not hit any buildings - SUNLIGHT")
+            carb.log_info(f"[ShadowAnalyzer] Ray did not hit any buildings or terrain - SUNLIGHT")
             return False, None
 
     def _cast_ray_against_buildings(
@@ -73,7 +74,7 @@ class ShadowAnalyzer:
         max_distance: float
     ) -> Optional[Tuple[float, str]]:
         """
-        Cast a ray and check for intersections with building meshes.
+        Cast a ray and check for intersections with building and terrain meshes.
 
         Args:
             origin: Ray origin point
@@ -83,50 +84,80 @@ class ShadowAnalyzer:
         Returns:
             Tuple of (distance, prim_path) if hit, None otherwise
         """
-        buildings_prim = self.stage.GetPrimAtPath("/World/Buildings")
-        if not buildings_prim:
-            carb.log_warn("[ShadowAnalyzer] No buildings found at /World/Buildings")
-            return None
-
         closest_hit = None
         closest_distance = max_distance
 
-        # Iterate through all building meshes
-        for child in buildings_prim.GetAllChildren():
-            if not child.IsA(UsdGeom.Mesh):
-                continue
+        # Check buildings
+        buildings_prim = self.stage.GetPrimAtPath("/World/Buildings")
+        if buildings_prim:
+            # Iterate through all building meshes
+            for child in buildings_prim.GetAllChildren():
+                if not child.IsA(UsdGeom.Mesh):
+                    continue
 
-            mesh = UsdGeom.Mesh(child)
+                mesh = UsdGeom.Mesh(child)
+
+                # Get mesh geometry
+                points_attr = mesh.GetPointsAttr()
+                if not points_attr:
+                    continue
+
+                points = points_attr.Get()
+                if not points:
+                    continue
+
+                # Get face data
+                face_counts_attr = mesh.GetFaceVertexCountsAttr()
+                face_indices_attr = mesh.GetFaceVertexIndicesAttr()
+
+                if not face_counts_attr or not face_indices_attr:
+                    continue
+
+                face_counts = face_counts_attr.Get()
+                face_indices = face_indices_attr.Get()
+
+                # Check ray intersection with each face
+                hit_result = self._intersect_mesh(
+                    origin, direction, points, face_counts, face_indices, max_distance
+                )
+
+                if hit_result is not None:
+                    hit_distance = hit_result
+                    if hit_distance < closest_distance:
+                        closest_distance = hit_distance
+                        closest_hit = (hit_distance, str(child.GetPath()))
+
+        # Check terrain
+        terrain_prim = self.stage.GetPrimAtPath("/World/Terrain")
+        if terrain_prim and terrain_prim.IsA(UsdGeom.Mesh):
+            mesh = UsdGeom.Mesh(terrain_prim)
 
             # Get mesh geometry
             points_attr = mesh.GetPointsAttr()
-            if not points_attr:
-                continue
+            if points_attr:
+                points = points_attr.Get()
+                if points:
+                    # Get face data
+                    face_counts_attr = mesh.GetFaceVertexCountsAttr()
+                    face_indices_attr = mesh.GetFaceVertexIndicesAttr()
 
-            points = points_attr.Get()
-            if not points:
-                continue
+                    if face_counts_attr and face_indices_attr:
+                        face_counts = face_counts_attr.Get()
+                        face_indices = face_indices_attr.Get()
 
-            # Get face data
-            face_counts_attr = mesh.GetFaceVertexCountsAttr()
-            face_indices_attr = mesh.GetFaceVertexIndicesAttr()
+                        # Check ray intersection with terrain
+                        hit_result = self._intersect_mesh(
+                            origin, direction, points, face_counts, face_indices, max_distance
+                        )
 
-            if not face_counts_attr or not face_indices_attr:
-                continue
+                        if hit_result is not None:
+                            hit_distance = hit_result
+                            if hit_distance < closest_distance:
+                                closest_distance = hit_distance
+                                closest_hit = (hit_distance, "/World/Terrain")
 
-            face_counts = face_counts_attr.Get()
-            face_indices = face_indices_attr.Get()
-
-            # Check ray intersection with each face
-            hit_result = self._intersect_mesh(
-                origin, direction, points, face_counts, face_indices, max_distance
-            )
-
-            if hit_result is not None:
-                hit_distance = hit_result
-                if hit_distance < closest_distance:
-                    closest_distance = hit_distance
-                    closest_hit = (hit_distance, str(child.GetPath()))
+        if closest_hit is None:
+            carb.log_info(f"[ShadowAnalyzer] Ray did not hit any buildings or terrain - SUNLIGHT")
 
         return closest_hit
 

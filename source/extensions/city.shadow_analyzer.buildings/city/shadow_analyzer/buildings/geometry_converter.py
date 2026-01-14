@@ -126,19 +126,26 @@ class BuildingGeometryConverter:
             # Convert GPS coordinates to scene coordinates
             scene_coords = []
             for lat, lon in coordinates:
-                x, y = self.gps_to_scene_coords(lat, lon)
-                scene_coords.append((x, y))
+                x, z = self.gps_to_scene_coords(lat, lon)
+                scene_coords.append((x, z))
+
+            # Calculate average terrain elevation at building location
+            total_elevation = 0.0
+            for x, z in scene_coords:
+                total_elevation += self.get_terrain_elevation_at_point(x, z)
+            base_elevation = total_elevation / len(scene_coords)
 
             # Create extruded polygon (building as box with polygon base)
             mesh = UsdGeom.Mesh.Define(self.stage, building_path)
 
             # Build vertices: bottom + top faces
             # USD uses Z-up coordinate system, so buildings lie in XZ plane with Y as height
+            # Buildings sit on terrain at base_elevation
             points = []
             for x, z in scene_coords:
-                points.append(Gf.Vec3f(x, 0.0, z))  # Bottom face (Y=0, ground level)
+                points.append(Gf.Vec3f(x, base_elevation, z))  # Bottom face at terrain elevation
             for x, z in scene_coords:
-                points.append(Gf.Vec3f(x, height, z))  # Top face (Y=height)
+                points.append(Gf.Vec3f(x, base_elevation + height, z))  # Top face (base + height)
 
             mesh.CreatePointsAttr(points)
 
@@ -302,9 +309,13 @@ class BuildingGeometryConverter:
                 perp_x = -dz
                 perp_z = dx
 
+                # Get terrain elevation at this point
+                terrain_elev = self.get_terrain_elevation_at_point(x, z)
+                road_y = terrain_elev + 0.05  # Slightly above terrain to avoid z-fighting
+
                 # Create two vertices (left and right edges of road)
-                points.append(Gf.Vec3f(x - perp_x * half_width, 0.05, z - perp_z * half_width))  # Left edge
-                points.append(Gf.Vec3f(x + perp_x * half_width, 0.05, z + perp_z * half_width))  # Right edge
+                points.append(Gf.Vec3f(x - perp_x * half_width, road_y, z - perp_z * half_width))  # Left edge
+                points.append(Gf.Vec3f(x + perp_x * half_width, road_y, z + perp_z * half_width))  # Right edge
 
             mesh.CreatePointsAttr(points)
 
@@ -436,3 +447,48 @@ class BuildingGeometryConverter:
 
         carb.log_info(f"[BuildingConverter] Created ground plane ({size}m x {size}m)")
         return ground_path
+
+    def get_terrain_elevation_at_point(self, x: float, z: float) -> float:
+        """
+        Get terrain elevation at a specific scene coordinate by querying the terrain mesh.
+
+        Args:
+            x: X coordinate in scene space
+            z: Z coordinate in scene space
+
+        Returns:
+            Elevation (Y value) at that point, or 0.0 if no terrain exists
+        """
+        terrain_prim = self.stage.GetPrimAtPath("/World/Terrain")
+        if not terrain_prim or not terrain_prim.IsA(UsdGeom.Mesh):
+            return 0.0
+
+        try:
+            mesh = UsdGeom.Mesh(terrain_prim)
+            points_attr = mesh.GetPointsAttr()
+            if not points_attr:
+                return 0.0
+
+            points = points_attr.Get()
+            if not points or len(points) == 0:
+                return 0.0
+
+            # Find the closest terrain vertex to the query point
+            # This is a simple approach - could use interpolation for better accuracy
+            min_dist_sq = float('inf')
+            closest_elevation = 0.0
+
+            for point in points:
+                dx = point[0] - x
+                dz = point[2] - z
+                dist_sq = dx * dx + dz * dz
+
+                if dist_sq < min_dist_sq:
+                    min_dist_sq = dist_sq
+                    closest_elevation = point[1]  # Y value is elevation
+
+            return closest_elevation
+
+        except Exception as e:
+            carb.log_warn(f"[BuildingConverter] Error querying terrain elevation: {e}")
+            return 0.0
