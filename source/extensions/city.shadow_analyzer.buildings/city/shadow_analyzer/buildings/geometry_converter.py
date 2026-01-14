@@ -31,6 +31,43 @@ class BuildingGeometryConverter:
         self.reference_lat = latitude
         self.reference_lon = longitude
         carb.log_info(f"[BuildingConverter] Reference point set to ({latitude}, {longitude})")
+        
+        # Store reference point in scene metadata for API access
+        buildings_prim = self.stage.GetPrimAtPath("/World/Buildings")
+        if buildings_prim:
+            buildings_prim.SetCustomDataByKey("reference_latitude", latitude)
+            buildings_prim.SetCustomDataByKey("reference_longitude", longitude)
+    
+    def load_reference_point_from_scene(self) -> bool:
+        """
+        Load reference point from scene metadata if buildings exist.
+        
+        Returns:
+            True if reference point was loaded, False otherwise
+        """
+        print("[BuildingConverter] Checking for buildings at /World/Buildings...")
+        buildings_prim = self.stage.GetPrimAtPath("/World/Buildings")
+        if not buildings_prim:
+            print("[BuildingConverter] No buildings prim found at /World/Buildings")
+            return False
+        
+        print(f"[BuildingConverter] Buildings prim found: {buildings_prim.GetPath()}")
+        print(f"[BuildingConverter] Buildings prim is valid: {buildings_prim.IsValid()}")
+        
+        ref_lat = buildings_prim.GetCustomDataByKey("reference_latitude")
+        ref_lon = buildings_prim.GetCustomDataByKey("reference_longitude")
+        
+        print(f"[BuildingConverter] reference_latitude: {ref_lat}")
+        print(f"[BuildingConverter] reference_longitude: {ref_lon}")
+        
+        if ref_lat is not None and ref_lon is not None:
+            self.reference_lat = ref_lat
+            self.reference_lon = ref_lon
+            print(f"[BuildingConverter] Loaded reference point from scene: ({ref_lat}, {ref_lon})")
+            carb.log_info(f"[BuildingConverter] Loaded reference point from scene: ({ref_lat}, {ref_lon})")
+            return True
+        
+        return False
 
     def gps_to_scene_coords(self, lat: float, lon: float) -> Tuple[float, float]:
         """
@@ -182,12 +219,13 @@ class BuildingGeometryConverter:
         Returns:
             List of created building prim paths
         """
-        self.set_reference_point(reference_lat, reference_lon)
-
-        # Ensure parent exists
+        # Ensure parent exists FIRST
         parent_path = "/World/Buildings"
         if not self.stage.GetPrimAtPath(parent_path):
             UsdGeom.Xform.Define(self.stage, parent_path)
+        
+        # NOW set reference point (after prim exists, so metadata can be saved)
+        self.set_reference_point(reference_lat, reference_lon)
 
         created_paths = []
         for building in buildings:

@@ -72,6 +72,7 @@ template_name = "kit_base_editor"
 "city.shadow_analyzer.sun" = {}  # Sun position calculation
 "city.shadow_analyzer.buildings" = { order = -100 }  # OpenStreetMap building loader (load early)
 "city.shadow_analyzer.ui" = {}  # Main UI controls
+"city.shadow_analyzer.api" = {}  # REST API server
 
 
 [settings.persistent.app]
@@ -79,6 +80,10 @@ viewport.autoFrame.mode = "first_open"  # Auto frame the first time the viewport
 
 
 [settings]
+# API Server Configuration
+exts."city.shadow_analyzer.api".host = "0.0.0.0"
+exts."city.shadow_analyzer.api".port = 8000
+
 crashreporter.compressDumpFiles = true
 exts."omni.kit.material.library".ui_show_list = ["OmniPBR", "OmniGlass", "OmniSurface", "USD Preview Surface", "OpenPBR Surface"]
 exts."omni.rtx.window.settings".window_menu = "Window" # Where to put the render settings menuitem

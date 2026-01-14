@@ -29,7 +29,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._building_loader = BuildingLoader()
         # Note: BuildingGeometryConverter is created when needed (requires stage)
 
-        # Default location (New York City)
+        # Default location (New York City, USA)
         self._latitude = 40.7128
         self._longitude = -74.0060
         self._current_time = datetime.now(timezone.utc)
