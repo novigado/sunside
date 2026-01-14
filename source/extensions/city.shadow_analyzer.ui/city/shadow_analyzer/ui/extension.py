@@ -142,7 +142,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                              height=40,
                              style={"background_color": 0xFF4CAF50})
 
-                    ui.Button("Load Buildings from OpenStreetMap",
+                    self._load_buildings_button = ui.Button("Load Buildings from OpenStreetMap",
                              clicked_fn=self._load_buildings,
                              height=40,
                              style={"background_color": 0xFFFF9800})
@@ -336,6 +336,12 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
     def _load_buildings(self):
         """Load scene from OpenStreetMap (buildings, roads, ground) for the current location."""
         carb.log_info("[Shadow Analyzer] ===== LOADING SCENE FROM OPENSTREETMAP =====")
+        carb.log_info("[Shadow Analyzer] Button clicked - starting load process")
+
+        # IMMEDIATE VISUAL FEEDBACK: Disable button and change appearance
+        self._load_buildings_button.enabled = False
+        self._load_buildings_button.text = "⏳ Loading..."
+        self._load_buildings_button.set_style({"background_color": 0xFF757575})  # Gray during loading
 
         # Update status
         self._building_status_label.text = "⏳ Loading scene from OpenStreetMap..."
@@ -367,6 +373,11 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 self._building_status_label.text = "No data found in this area"
                 self._building_status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
                 carb.log_warn("[Shadow Analyzer] No data found")
+                
+                # Restore button
+                self._load_buildings_button.enabled = True
+                self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
+                self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
                 return
 
             # Get stage
@@ -374,6 +385,11 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             if not stage:
                 self._building_status_label.text = "Error: No stage available"
                 self._building_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+                
+                # Restore button
+                self._load_buildings_button.enabled = True
+                self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
+                self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
                 return
 
             # Create geometry converter (needs stage)
@@ -428,6 +444,11 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             self._building_status_label.text = status_text
             self._building_status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
             carb.log_info(f"[Shadow Analyzer] Successfully loaded scene at ({self._latitude}, {self._longitude})")
+            
+            # Restore button after success
+            self._load_buildings_button.enabled = True
+            self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
+            self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
 
         except Exception as e:
             error_msg = f"Error loading scene: {str(e)}"
@@ -436,6 +457,11 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             carb.log_error(f"[Shadow Analyzer] {error_msg}")
             import traceback
             carb.log_error(traceback.format_exc())
+            
+            # Restore button after error
+            self._load_buildings_button.enabled = True
+            self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
+            self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
 
     def _toggle_query_mode(self):
         """Toggle query mode on/off."""
