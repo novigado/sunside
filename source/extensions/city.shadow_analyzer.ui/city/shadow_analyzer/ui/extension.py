@@ -145,7 +145,8 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     self._load_buildings_button = ui.Button("Load Buildings from OpenStreetMap",
                              clicked_fn=self._load_buildings,
                              height=40,
-                             style={"background_color": 0xFFFF9800})
+                             style={"background_color": 0xFFFF9800},
+                             tooltip="Click to load buildings and roads from OpenStreetMap")
 
                     self._building_status_label = ui.Label("No buildings loaded",
                                                            style={"font_size": 12, "color": 0x80FFFFFF})
@@ -335,13 +336,18 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
     def _load_buildings(self):
         """Load scene from OpenStreetMap (buildings, roads, ground) for the current location."""
+        print("=" * 80)
+        print("BUTTON CLICKED! _load_buildings function was called")
+        print("=" * 80)
         carb.log_info("[Shadow Analyzer] ===== LOADING SCENE FROM OPENSTREETMAP =====")
         carb.log_info("[Shadow Analyzer] Button clicked - starting load process")
 
         # IMMEDIATE VISUAL FEEDBACK: Disable button and change appearance
+        print("Attempting to disable button and change its appearance...")
         self._load_buildings_button.enabled = False
         self._load_buildings_button.text = "⏳ Loading..."
         self._load_buildings_button.set_style({"background_color": 0xFF757575})  # Gray during loading
+        print("Button appearance changed!")
 
         # Update status
         self._building_status_label.text = "⏳ Loading scene from OpenStreetMap..."
