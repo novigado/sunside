@@ -37,6 +37,9 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._terrain_loader = TerrainLoader()
         # Note: BuildingGeometryConverter and TerrainMeshGenerator are created when needed (requires stage)
 
+        # Try to set up Nucleus caching
+        self._setup_nucleus_cache()
+
         # Default location (San Francisco, USA - good for testing terrain with hills)
         self._latitude = 37.7749
         self._longitude = -122.4194
@@ -73,6 +76,36 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             self._window.destroy()
             self._window = None
         carb.log_info("[city.shadow_analyzer.ui] Shadow Analyzer UI shutting down")
+
+    def _setup_nucleus_cache(self):
+        """Initialize Nucleus caching if available."""
+        try:
+            # Import Nucleus manager
+            from city.shadow_analyzer.nucleus import get_nucleus_manager
+            from city.shadow_analyzer.nucleus.city_cache import CityCacheManager
+
+            # Get global nucleus manager instance
+            nucleus_manager = get_nucleus_manager()
+
+            # Create cache manager
+            cache_manager = CityCacheManager(nucleus_manager)
+
+            # Set cache on building loader
+            self._building_loader.set_nucleus_cache(cache_manager)
+
+            # Set cache on terrain loader (if it supports it)
+            if hasattr(self._terrain_loader, 'set_nucleus_cache'):
+                self._terrain_loader.set_nucleus_cache(cache_manager)
+
+            carb.log_info("[city.shadow_analyzer.ui] ✅ Nucleus caching enabled")
+
+        except RuntimeError as e:
+            # Nucleus extension not loaded yet
+            carb.log_warn(f"[city.shadow_analyzer.ui] Nucleus caching not available: {e}")
+        except Exception as e:
+            carb.log_error(f"[city.shadow_analyzer.ui] Error setting up Nucleus cache: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
 
     def _create_ui(self):
         """Create the main UI window."""
@@ -1200,4 +1233,4 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         """Restore map button to original state."""
         self._load_map_button.enabled = True
         self._load_map_button.text = "Load Map with Terrain & Buildings"
-        self._load_map_button.set_style({"background_color": 0xFFFF9800})
+        self._load_map_button.set_style({"background_color": 0xFFFF9800"})

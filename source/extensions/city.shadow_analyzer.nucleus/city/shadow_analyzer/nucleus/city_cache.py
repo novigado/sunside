@@ -112,39 +112,242 @@ class CityCacheManager:
 
         return True, nucleus_path, metadata
 
-    def save_to_cache(
+    def load_usd_from_cache(
         self,
         latitude: float,
         longitude: float,
-        radius: float,
-        stage: Usd.Stage,
-        metadata: Dict
-    ) -> Tuple[bool, Optional[str]]:
+        radius: float
+    ) -> Tuple[bool, Optional[Usd.Stage], Optional[Dict]]:
         """
-        Save city building data to Nucleus cache.
+        Load USD stage directly from Nucleus cache.
 
         Args:
             latitude: Center latitude
             longitude: Center longitude
             radius: Radius in kilometers
-            stage: USD stage containing building geometry
-            metadata: Dictionary with cache metadata (building_count, bounds, etc.)
+
+        Returns:
+            Tuple of (success: bool, stage: Optional[Usd.Stage], metadata: Optional[Dict])
+        """
+        is_cached, nucleus_path = self.is_cached(latitude, longitude, radius)
+
+        if not is_cached:
+            carb.log_info(f"[CityCacheManager] Cache miss for ({latitude}, {longitude})")
+            return False, None, None
+
+        try:
+            city_name, bounds_hash = self.generate_cache_key(latitude, longitude, radius)
+
+            # Load USD content from Nucleus
+            success, usd_content = self._nucleus_manager.load_buildings_from_nucleus(city_name, bounds_hash)
+
+            if not success or not usd_content:
+                carb.log_error(f"[CityCacheManager] Failed to load USD content from Nucleus")
+                return False, None, None
+
+            # Deserialize USD content to stage
+            stage = self._deserialize_usd_stage(usd_content)
+
+            if not stage:
+                carb.log_error(f"[CityCacheManager] Failed to deserialize USD stage")
+                return False, None, None
+
+            # Get metadata
+            metadata = self._nucleus_manager.get_metadata(city_name, bounds_hash)
+
+            carb.log_info(f"[CityCacheManager] Successfully loaded USD stage from cache")
+            if metadata:
+                carb.log_info(f"[CityCacheManager] Contains {metadata.get('building_count', 0)} buildings")
+
+            return True, stage, metadata
+
+        except Exception as e:
+            carb.log_error(f"[CityCacheManager] Error loading from cache: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
+            return False, None, None
+
+    def _deserialize_usd_stage(self, usd_content: str) -> Optional[Usd.Stage]:
+        """
+        Deserialize USD content string to USD stage.
+
+        Args:
+            usd_content: USD file content as string
+
+        Returns:
+            USD Stage or None if deserialization fails
+        """
+        import tempfile
+        import os
+
+        temp_fd, temp_path = tempfile.mkstemp(suffix='.usd')
+
+        try:
+            # Write content to temp file
+            os.close(temp_fd)
+            with open(temp_path, 'w', encoding='utf-8') as f:
+                f.write(usd_content)
+
+            # Open stage from temp file
+            stage = Usd.Stage.Open(temp_path)
+
+            return stage
+
+        except Exception as e:
+            carb.log_error(f"[CityCacheManager] Error deserializing USD: {e}")
+            return None
+
+        finally:
+            # Clean up temp file
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except:
+                    pass  # Ignore cleanup errors
+
+    def generate_terrain_cache_key(
+        self,
+        latitude: float,
+        longitude: float,
+        radius: float,
+        resolution: int
+    ) -> Tuple[str, str]:
+        """
+        Generate cache key for terrain data (includes resolution).
+
+        Args:
+            latitude: Center latitude
+            longitude: Center longitude
+            radius: Radius in kilometers
+            resolution: Resolution in meters
+
+        Returns:
+            Tuple of (city_name, bounds_hash)
+        """
+        city_name = f"city_{abs(int(latitude))}N_{abs(int(longitude))}W"
+
+        # Include resolution in hash for terrain
+        bounds_str = f"{latitude:.6f},{longitude:.6f},{radius:.3f},res{resolution}"
+        bounds_hash = hashlib.md5(bounds_str.encode()).hexdigest()[:12]
+
+        return city_name, bounds_hash
+
+    def is_terrain_cached(
+        self,
+        latitude: float,
+        longitude: float,
+        radius: float,
+        resolution: int
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Check if terrain data is cached on Nucleus.
+
+        Args:
+            latitude: Center latitude
+            longitude: Center longitude
+            radius: Radius in kilometers
+            resolution: Resolution in meters
+
+        Returns:
+            Tuple of (is_cached: bool, nucleus_path: Optional[str])
+        """
+        if not self._nucleus_manager.is_connected():
+            return False, None
+
+        city_name, bounds_hash = self.generate_terrain_cache_key(latitude, longitude, radius, resolution)
+        return self._nucleus_manager.check_terrain_cache(city_name, bounds_hash)
+
+    def load_terrain_from_cache(
+        self,
+        latitude: float,
+        longitude: float,
+        radius: float,
+        resolution: int
+    ) -> Tuple[bool, Optional[Usd.Stage], Optional[Dict]]:
+        """
+        Load terrain USD stage from Nucleus cache.
+
+        Args:
+            latitude: Center latitude
+            longitude: Center longitude
+            radius: Radius in kilometers
+            resolution: Resolution in meters
+
+        Returns:
+            Tuple of (success: bool, stage: Optional[Usd.Stage], metadata: Optional[Dict])
+        """
+        is_cached, nucleus_path = self.is_terrain_cached(latitude, longitude, radius, resolution)
+
+        if not is_cached:
+            carb.log_info(f"[CityCacheManager] Terrain cache miss for ({latitude}, {longitude}) res={resolution}m")
+            return False, None, None
+
+        try:
+            city_name, bounds_hash = self.generate_terrain_cache_key(latitude, longitude, radius, resolution)
+
+            # Load USD content from Nucleus
+            success, usd_content = self._nucleus_manager.load_terrain_from_nucleus(city_name, bounds_hash)
+
+            if not success or not usd_content:
+                carb.log_error(f"[CityCacheManager] Failed to load terrain USD from Nucleus")
+                return False, None, None
+
+            # Deserialize USD content to stage
+            stage = self._deserialize_usd_stage(usd_content)
+
+            if not stage:
+                carb.log_error(f"[CityCacheManager] Failed to deserialize terrain USD")
+                return False, None, None
+
+            # Get metadata
+            metadata = self._nucleus_manager.get_terrain_metadata(city_name, bounds_hash)
+
+            carb.log_info(f"[CityCacheManager] Terrain cache HIT - loaded from Nucleus")
+            if metadata:
+                carb.log_info(f"[CityCacheManager] Resolution: {metadata.get('resolution_meters', resolution)}m")
+
+            return True, stage, metadata
+
+        except Exception as e:
+            carb.log_error(f"[CityCacheManager] Error loading terrain from cache: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
+            return False, None, None
+
+    def save_terrain_to_cache(
+        self,
+        latitude: float,
+        longitude: float,
+        radius: float,
+        resolution: int,
+        stage: Usd.Stage,
+        metadata: Dict
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Save terrain data to Nucleus cache.
+
+        Args:
+            latitude: Center latitude
+            longitude: Center longitude
+            radius: Radius in kilometers
+            resolution: Resolution in meters
+            stage: USD stage containing terrain geometry
+            metadata: Dictionary with cache metadata (resolution, bounds, etc.)
 
         Returns:
             Tuple of (success: bool, nucleus_path: Optional[str])
         """
         if not self._nucleus_manager.is_connected():
-            carb.log_warn("[CityCacheManager] Not connected to Nucleus, cannot cache")
+            carb.log_warn("[CityCacheManager] Not connected to Nucleus, cannot cache terrain")
             return False, None
 
         try:
-            city_name, bounds_hash = self.generate_cache_key(latitude, longitude, radius)
+            city_name, bounds_hash = self.generate_terrain_cache_key(latitude, longitude, radius, resolution)
 
             # Export stage to USD string
             import tempfile
             import os
 
-            # Create temporary file
             temp_fd, temp_path = tempfile.mkstemp(suffix='.usd')
             os.close(temp_fd)
 
@@ -161,15 +364,14 @@ class CityCacheManager:
                     'latitude': latitude,
                     'longitude': longitude,
                     'radius_km': radius,
-                    'building_count': metadata.get('building_count', 0),
-                    'road_count': metadata.get('road_count', 0),
+                    'resolution_meters': resolution,
                     'bounds': metadata.get('bounds', {}),
-                    'data_source': 'OpenStreetMap',
-                    'cache_key': f"{city_name}/{bounds_hash}"
+                    'data_source': metadata.get('data_source', 'OpenTopography'),
+                    'cache_key': f"{city_name}/terrain_{bounds_hash}"
                 }
 
                 # Save to Nucleus
-                success, nucleus_path = self._nucleus_manager.save_buildings_to_nucleus(
+                success, nucleus_path = self._nucleus_manager.save_terrain_to_nucleus(
                     city_name,
                     bounds_hash,
                     usd_content,
@@ -177,9 +379,9 @@ class CityCacheManager:
                 )
 
                 if success:
-                    carb.log_info(f"[CityCacheManager] Successfully cached to: {nucleus_path}")
+                    carb.log_info(f"[CityCacheManager] Successfully cached terrain to: {nucleus_path}")
                 else:
-                    carb.log_error(f"[CityCacheManager] Failed to cache data")
+                    carb.log_error(f"[CityCacheManager] Failed to cache terrain data")
 
                 return success, nucleus_path
 
@@ -189,7 +391,7 @@ class CityCacheManager:
                     os.remove(temp_path)
 
         except Exception as e:
-            carb.log_error(f"[CityCacheManager] Error saving to cache: {e}")
+            carb.log_error(f"[CityCacheManager] Error saving terrain to cache: {e}")
             import traceback
             carb.log_error(traceback.format_exc())
             return False, None
