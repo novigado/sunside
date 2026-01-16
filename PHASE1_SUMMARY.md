@@ -121,18 +121,18 @@ def load_buildings_for_area(self, lat, lon, radius):
     # 1. Check Nucleus cache
     cache = CityCacheManager(nucleus_manager)
     is_cached, nucleus_path, metadata = cache.load_from_cache(lat, lon, radius)
-    
+
     if is_cached:
         # Load from Nucleus (fast!)
         return self._load_from_nucleus(nucleus_path)
-    
+
     # 2. Cache miss - fetch from OSM
     buildings = self._fetch_from_osm(lat, lon, radius)
-    
+
     # 3. Save to Nucleus for next time
     stage = self._create_usd_stage(buildings)
     cache.save_to_cache(lat, lon, radius, stage, metadata)
-    
+
     return buildings
 ```
 
@@ -233,6 +233,6 @@ f60ffae feat: Implement Phase 1 - Core Nucleus integration with city caching
 
 ---
 
-**Phase 1 Completed**: January 14, 2026  
-**Next Phase**: UI Integration (Phase 2)  
+**Phase 1 Completed**: January 14, 2026
+**Next Phase**: UI Integration (Phase 2)
 **Status**: ✅ Ready for Phase 2

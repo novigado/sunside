@@ -37,10 +37,53 @@ class NucleusManager:
         carb.log_info(f"[NucleusManager] Configured for Nucleus server: {self._nucleus_server}")
         carb.log_info(f"[NucleusManager] Base path: {self._base_path}")
 
-        # Disable authentication popup for headless/service mode
-        omni.client.set_authentication_message_box_enabled(False)
+        # Disable authentication popup for headless/service mode (if available)
+        try:
+            if hasattr(omni.client, 'set_authentication_message_box_enabled'):
+                omni.client.set_authentication_message_box_enabled(False)
+        except Exception as e:
+            carb.log_warn(f"[NucleusManager] Could not disable auth popup: {e}")
+
+        # Set up token-based authentication
+        self._setup_authentication()
 
         self._connected = False
+
+    def _setup_authentication(self):
+        """Set up authentication for Nucleus connection."""
+        username = self._settings.get_as_string("exts/city.shadow_analyzer.nucleus/username") or ""
+        password = self._settings.get_as_string("exts/city.shadow_analyzer.nucleus/password") or ""
+
+        if username and password:
+            carb.log_info(f"[NucleusManager] Setting up authentication callback for user: {username}")
+
+            # Register authentication callback - this is the standard way
+            def auth_callback(url: str):
+                # Return credentials as tuple
+                return (username, password)
+
+            try:
+                omni.client.register_authentication_callback(auth_callback)
+                carb.log_info("[NucleusManager] Authentication callback registered")
+            except Exception as e:
+                carb.log_error(f"[NucleusManager] Failed to register auth callback: {e}")
+        else:
+            carb.log_info("[NucleusManager] No credentials configured, attempting anonymous access")
+
+    @property
+    def nucleus_server(self) -> str:
+        """Get the Nucleus server URL."""
+        return self._nucleus_server
+
+    @property
+    def project_path(self) -> str:
+        """Get the project path on Nucleus."""
+        return self._project_path
+
+    @property
+    def base_path(self) -> str:
+        """Get the full base path (server + project path)."""
+        return self._base_path
 
     def check_connection(self) -> bool:
         """
@@ -325,14 +368,6 @@ class NucleusManager:
     def is_connected(self) -> bool:
         """Check if currently connected to Nucleus."""
         return self._connected
-
-    def get_nucleus_server(self) -> str:
-        """Get the configured Nucleus server URL."""
-        return self._nucleus_server
-
-    def get_base_path(self) -> str:
-        """Get the base path for city data."""
-        return self._base_path
 
     def shutdown(self):
         """Clean up resources."""

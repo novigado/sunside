@@ -86,8 +86,11 @@ exts."city.shadow_analyzer.api".host = "0.0.0.0"
 exts."city.shadow_analyzer.api".port = 8000
 
 # Nucleus Configuration
-exts."city.shadow_analyzer.nucleus".nucleus_server = "omniverse://localhost"
+exts."city.shadow_analyzer.nucleus".nucleus_server = "omniverse://nucleus.swedencentral.cloudapp.azure.com"
 exts."city.shadow_analyzer.nucleus".project_path = "/Projects/CityData"
+exts."city.shadow_analyzer.nucleus".username = "omniverse"  # Username for Nucleus authentication
+exts."city.shadow_analyzer.nucleus".password = "Letmeinletmein12"  # Set to your SERVICE_PASSWORD from Nucleus .env
+exts."city.shadow_analyzer.nucleus".api_token = ""  # Optional: Set Nucleus API token for authentication
 
 crashreporter.compressDumpFiles = true
 exts."omni.kit.material.library".ui_show_list = ["OmniPBR", "OmniGlass", "OmniSurface", "USD Preview Surface", "OpenPBR Surface"]

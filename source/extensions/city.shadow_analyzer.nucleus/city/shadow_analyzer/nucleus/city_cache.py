@@ -45,11 +45,11 @@ class CityCacheManager:
         # Generate city name from coordinates (simplified)
         # In production, could use reverse geocoding
         city_name = f"city_{abs(int(latitude))}N_{abs(int(longitude))}W"
-        
+
         # Generate unique hash for exact bounds
         bounds_str = f"{latitude:.6f},{longitude:.6f},{radius:.3f}"
         bounds_hash = hashlib.md5(bounds_str.encode()).hexdigest()[:12]
-        
+
         return city_name, bounds_hash
 
     def is_cached(
@@ -93,19 +93,19 @@ class CityCacheManager:
             Tuple of (success: bool, nucleus_path: Optional[str], metadata: Optional[Dict])
         """
         is_cached, nucleus_path = self.is_cached(latitude, longitude, radius)
-        
+
         if not is_cached:
             carb.log_info(f"[CityCacheManager] Cache miss for ({latitude}, {longitude})")
             return False, None, None
 
         city_name, bounds_hash = self.generate_cache_key(latitude, longitude, radius)
-        
+
         # Get metadata
         metadata = self._nucleus_manager.get_metadata(city_name, bounds_hash)
-        
+
         carb.log_info(f"[CityCacheManager] Cache HIT for ({latitude}, {longitude})")
         carb.log_info(f"[CityCacheManager] Loading from: {nucleus_path}")
-        
+
         if metadata:
             carb.log_info(f"[CityCacheManager] Cached data from: {metadata.get('saved_at', 'unknown')}")
             carb.log_info(f"[CityCacheManager] Contains {metadata.get('building_count', 0)} buildings")
@@ -143,19 +143,19 @@ class CityCacheManager:
             # Export stage to USD string
             import tempfile
             import os
-            
+
             # Create temporary file
             temp_fd, temp_path = tempfile.mkstemp(suffix='.usd')
             os.close(temp_fd)
-            
+
             try:
                 # Export stage to temporary file
                 stage.Export(temp_path)
-                
+
                 # Read file content
                 with open(temp_path, 'r', encoding='utf-8') as f:
                     usd_content = f.read()
-                
+
                 # Add cache metadata
                 cache_metadata = {
                     'latitude': latitude,
@@ -167,7 +167,7 @@ class CityCacheManager:
                     'data_source': 'OpenStreetMap',
                     'cache_key': f"{city_name}/{bounds_hash}"
                 }
-                
+
                 # Save to Nucleus
                 success, nucleus_path = self._nucleus_manager.save_buildings_to_nucleus(
                     city_name,
@@ -175,14 +175,14 @@ class CityCacheManager:
                     usd_content,
                     cache_metadata
                 )
-                
+
                 if success:
                     carb.log_info(f"[CityCacheManager] Successfully cached to: {nucleus_path}")
                 else:
                     carb.log_error(f"[CityCacheManager] Failed to cache data")
-                
+
                 return success, nucleus_path
-                
+
             finally:
                 # Clean up temporary file
                 if os.path.exists(temp_path):
@@ -217,7 +217,7 @@ class CityCacheManager:
             }
 
         cities = self.list_cached_cities()
-        
+
         return {
             'connected': True,
             'nucleus_server': self._nucleus_manager.get_nucleus_server(),

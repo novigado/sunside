@@ -11,17 +11,17 @@ Transform the City Shadow Analyzer into a **collaborative urban planning tool** 
    - Slow initial load times (10-30 seconds per city area)
    - Rate limit issues with repeated queries
    - Network dependency for every session
-   
+
 2. **No Persistence**: Analysis results disappear when app closes:
    - Cannot review previous analyses
    - Cannot compare multiple scenarios
    - Lost institutional knowledge
-   
+
 3. **No Collaboration**: Isolated work environment:
    - Teams can't share city models
    - No way to review colleague's shadow studies
    - Duplicate effort across organization
-   
+
 4. **No Version Control**: Cannot track design iterations:
    - "What did the shadow look like last week?"
    - "Which design alternative cast less shadow?"
@@ -36,7 +36,7 @@ Store OpenStreetMap building geometry on Nucleus server:
 - **Path Structure**: `omniverse://nucleus-server/CityLibrary/{region}/{city}/buildings.usd`
 - **Metadata**: Bounds, building count, terrain data, last updated
 - **Smart Loading**: Check Nucleus before fetching from OSM
-- **Benefits**: 
+- **Benefits**:
   - ✅ 10x faster loading (local read vs API call)
   - ✅ Works offline (once cached)
   - ✅ No API rate limits
@@ -230,8 +230,8 @@ New "Projects" panel in `city.shadow_analyzer.ui`:
 ## User Stories
 
 ### Story 1: Urban Planner - Faster Workflow
-**As an** urban planner  
-**I want** to quickly load building data for cities I frequently analyze  
+**As an** urban planner
+**I want** to quickly load building data for cities I frequently analyze
 **So that** I don't waste time waiting for API calls
 
 **Acceptance Criteria**:
@@ -240,8 +240,8 @@ New "Projects" panel in `city.shadow_analyzer.ui`:
 - Cache invalidation option available
 
 ### Story 2: Architecture Team - Scenario Comparison
-**As an** architecture team lead  
-**I want** to compare shadow impact of 3 different building designs  
+**As an** architecture team lead
+**I want** to compare shadow impact of 3 different building designs
 **So that** we can choose the design with minimal shadow impact
 
 **Acceptance Criteria**:
@@ -251,8 +251,8 @@ New "Projects" panel in `city.shadow_analyzer.ui`:
 - Can export comparison report
 
 ### Story 3: Developer - Regulatory Compliance
-**As a** real estate developer  
-**I want** to save shadow analysis results with timestamps  
+**As a** real estate developer
+**I want** to save shadow analysis results with timestamps
 **So that** I can prove compliance with city regulations
 
 **Acceptance Criteria**:
@@ -262,8 +262,8 @@ New "Projects" panel in `city.shadow_analyzer.ui`:
 - Version history shows who made changes
 
 ### Story 4: Consultant - Knowledge Sharing
-**As a** shadow analysis consultant  
-**I want** to share my analysis results with clients  
+**As a** shadow analysis consultant
+**I want** to share my analysis results with clients
 **So that** they can review findings in USD Composer
 
 **Acceptance Criteria**:
@@ -403,7 +403,7 @@ omniverse://nucleus-server/
 
 ---
 
-**Document Version**: 1.0  
-**Created**: January 14, 2026  
-**Author**: GitHub Copilot  
+**Document Version**: 1.0
+**Created**: January 14, 2026
+**Author**: GitHub Copilot
 **Status**: 🔨 In Development
