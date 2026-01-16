@@ -37,9 +37,6 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._terrain_loader = TerrainLoader()
         # Note: BuildingGeometryConverter and TerrainMeshGenerator are created when needed (requires stage)
 
-        # Try to set up Nucleus caching
-        self._setup_nucleus_cache()
-
         # Default location (San Francisco, USA - good for testing terrain with hills)
         self._latitude = 37.7749
         self._longitude = -122.4194
@@ -68,6 +65,15 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
         # Create reference grid
         self._create_reference_grid()
+
+        # Try to set up Nucleus caching (deferred so it doesn't block UI startup)
+        asyncio.ensure_future(self._setup_nucleus_cache_async())
+
+    async def _setup_nucleus_cache_async(self):
+        """Initialize Nucleus caching asynchronously."""
+        # Wait a bit for nucleus extension to fully start
+        await asyncio.sleep(0.5)
+        self._setup_nucleus_cache()
 
     def on_shutdown(self):
         """Called when the extension shuts down."""
@@ -1233,4 +1239,4 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         """Restore map button to original state."""
         self._load_map_button.enabled = True
         self._load_map_button.text = "Load Map with Terrain & Buildings"
-        self._load_map_button.set_style({"background_color": 0xFFFF9800"})
+        self._load_map_button.set_style({"background_color": 0xFFFF9800})

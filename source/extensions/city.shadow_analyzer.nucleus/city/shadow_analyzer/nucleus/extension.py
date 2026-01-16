@@ -19,9 +19,9 @@ class NucleusIntegrationExtension(omni.ext.IExt):
         # Initialize Nucleus connection manager
         from .nucleus_manager import NucleusManager
         from . import _set_nucleus_manager
-        
+
         self._nucleus_manager = NucleusManager()
-        
+
         # Register as global singleton
         _set_nucleus_manager(self._nucleus_manager)
         carb.log_info("[city.shadow_analyzer.nucleus] Registered global NucleusManager singleton")

@@ -19,21 +19,21 @@ _nucleus_manager_instance = None
 def get_nucleus_manager() -> NucleusManager:
     """
     Get the global NucleusManager singleton instance.
-    
+
     This function returns the singleton instance of NucleusManager that is
     created when the nucleus extension starts up. It allows other extensions
     to access Nucleus functionality without creating multiple instances.
-    
+
     Returns:
         NucleusManager: The global nucleus manager instance
-        
+
     Raises:
         RuntimeError: If the nucleus extension hasn't been initialized yet
-    
+
     Example:
         ```python
         from city.shadow_analyzer.nucleus import get_nucleus_manager
-        
+
         nucleus_mgr = get_nucleus_manager()
         if nucleus_mgr.is_connected():
             # Use Nucleus for caching
@@ -41,22 +41,22 @@ def get_nucleus_manager() -> NucleusManager:
         ```
     """
     global _nucleus_manager_instance
-    
+
     if _nucleus_manager_instance is None:
         raise RuntimeError(
             "Nucleus manager not initialized. "
             "Make sure the city.shadow_analyzer.nucleus extension is enabled and started."
         )
-    
+
     return _nucleus_manager_instance
 
 
 def _set_nucleus_manager(manager: NucleusManager):
     """
     Set the global nucleus manager instance (internal use only).
-    
+
     This function is called by the NucleusIntegrationExtension during startup.
-    
+
     Args:
         manager: The NucleusManager instance to set as global singleton
     """
@@ -67,7 +67,7 @@ def _set_nucleus_manager(manager: NucleusManager):
 def _clear_nucleus_manager():
     """
     Clear the global nucleus manager instance (internal use only).
-    
+
     This function is called by the NucleusIntegrationExtension during shutdown.
     """
     global _nucleus_manager_instance
