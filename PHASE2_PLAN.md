@@ -4,34 +4,49 @@
 
 ## Objectives
 
-Integrate Nucleus caching into the BuildingLoader to automatically cache and retrieve building data, providing 10-20x performance improvement for repeated queries.
+Integrate Nucleus caching into the BuildingLoader and terrain system to automatically cache and retrieve:
+- **Building data** (from OpenStreetMap)
+- **Terrain elevation data** (from Open-Elevation API)
+
+Providing 10-20x performance improvement for repeated queries.
 
 ## What We're Building
 
-Transform the BuildingLoader from always querying OSM to intelligently using Nucleus cache:
+Transform both BuildingLoader and terrain system from always querying external APIs to intelligently using Nucleus cache:
 
 **Before (Current)**:
 ```python
-# Every time: Query OSM (30-60s)
+# Buildings: Every time query OSM (30-60s)
 buildings = osm_service.get_buildings(bounds)
 geometry = create_usd_geometry(buildings)
+
+# Terrain: Every time query Open-Elevation (10-20s)
+elevation_data = elevation_service.get_elevation(bounds, resolution)
+terrain_mesh = create_terrain_mesh(elevation_data)
 ```
 
 **After (Phase 2)**:
 ```python
-# First time: Query OSM + cache (30-60s + 2s)
-# Subsequent: Load from Nucleus (2-5s) ← 10-20x faster!
-if nucleus_cache.exists(bounds):
-    geometry = nucleus_cache.load(bounds)
+# Buildings: First time (30-60s + 2s), subsequent (2-5s) ← 10-20x faster!
+if nucleus_cache.has_buildings(bounds):
+    geometry = nucleus_cache.load_buildings(bounds)
 else:
     buildings = osm_service.get_buildings(bounds)
     geometry = create_usd_geometry(buildings)
-    nucleus_cache.save(bounds, geometry)
+    nucleus_cache.save_buildings(bounds, geometry)
+
+# Terrain: First time (10-20s + 2s), subsequent (2-5s) ← 5-10x faster!
+if nucleus_cache.has_terrain(bounds):
+    terrain_mesh = nucleus_cache.load_terrain(bounds)
+else:
+    elevation_data = elevation_service.get_elevation(bounds, resolution)
+    terrain_mesh = create_terrain_mesh(elevation_data)
+    nucleus_cache.save_terrain(bounds, terrain_mesh)
 ```
 
 ## Implementation Tasks
 
-### Task 1: Update BuildingLoader ✅ 
+### Task 1: Update BuildingLoader
 
 **File**: `source/extensions/city.shadow_analyzer.buildings/city/shadow_analyzer/buildings/building_loader.py`
 
@@ -48,6 +63,30 @@ else:
 - New helper: `_generate_cache_key()` - Create bounds hash
 - New helper: `_load_from_nucleus()` - Load cached USD
 - New helper: `_save_to_nucleus()` - Save USD to cache
+
+### Task 1b: Update Terrain System
+
+**File**: `source/extensions/city.shadow_analyzer.buildings/city/shadow_analyzer/buildings/building_loader.py`
+
+**Changes**:
+1. Add terrain cache checking before elevation API query
+2. Load terrain from Nucleus if cache hit
+3. Save terrain to Nucleus after elevation fetch (cache miss)
+4. Use separate cache keys for terrain vs buildings
+5. Add logging for terrain cache hits/misses
+
+**Methods to modify**:
+- `load_terrain()` or terrain loading method - Add cache logic
+- New helper: `_generate_terrain_cache_key()` - Create bounds + resolution hash
+- New helper: `_load_terrain_from_nucleus()` - Load cached terrain mesh
+- New helper: `_save_terrain_to_nucleus()` - Save terrain mesh to cache
+
+**Cache key for terrain**:
+```python
+# Include resolution in terrain cache key
+terrain_key = f"{north:.6f},{south:.6f},{east:.6f},{west:.6f},res{resolution}"
+terrain_hash = hashlib.md5(terrain_key.encode()).hexdigest()[:16]
+```
 
 ### Task 2: Add Cache Statistics UI
 
@@ -185,11 +224,11 @@ def test_cache_miss_then_hit():
     # First load
     loader.load_buildings_for_area(lat, lon, radius)
     assert cache_stats['misses'] == 1
-    
+
     # Second load
     loader.load_buildings_for_area(lat, lon, radius)
     assert cache_stats['hits'] == 1
-    
+
 def test_fallback_without_nucleus():
     nucleus_manager.disconnect()
     buildings = loader.load_buildings_for_area(lat, lon, radius)

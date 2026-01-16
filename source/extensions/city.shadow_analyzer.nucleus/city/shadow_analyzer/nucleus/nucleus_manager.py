@@ -365,6 +365,162 @@ class NucleusManager:
             carb.log_error(f"[NucleusManager] Error saving results: {e}")
             return False, None
 
+    # Terrain caching methods
+
+    def get_terrain_usd_path(self, city_name: str, bounds_hash: str) -> str:
+        """
+        Get the Nucleus path for cached terrain USD file.
+
+        Args:
+            city_name: Name of the city
+            bounds_hash: Hash of the geographic bounds + resolution
+
+        Returns:
+            str: Full Nucleus path to terrain USD file
+        """
+        city_path = self.get_city_data_path(city_name)
+        return f"{city_path}/terrain_{bounds_hash}.usd"
+
+    def check_terrain_cache(self, city_name: str, bounds_hash: str) -> Tuple[bool, Optional[str]]:
+        """
+        Check if terrain data is cached on Nucleus.
+
+        Args:
+            city_name: Name of the city
+            bounds_hash: Hash of the geographic bounds + resolution
+
+        Returns:
+            Tuple of (exists: bool, path: Optional[str])
+        """
+        if not self._connected:
+            return False, None
+
+        usd_path = self.get_terrain_usd_path(city_name, bounds_hash)
+        result, _ = omni.client.stat(usd_path)
+
+        if result == omni.client.Result.OK:
+            carb.log_info(f"[NucleusManager] Found cached terrain at: {usd_path}")
+            return True, usd_path
+        else:
+            carb.log_info(f"[NucleusManager] No cached terrain for {city_name}/{bounds_hash}")
+            return False, None
+
+    def save_terrain_to_nucleus(
+        self,
+        city_name: str,
+        bounds_hash: str,
+        usd_content: str,
+        metadata: Dict
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Save terrain USD data to Nucleus.
+
+        Args:
+            city_name: Name of the city
+            bounds_hash: Hash of the geographic bounds + resolution
+            usd_content: USD file content as string
+            metadata: Dictionary of metadata (bounds, resolution, timestamp, etc.)
+
+        Returns:
+            Tuple of (success: bool, nucleus_path: Optional[str])
+        """
+        if not self._connected:
+            carb.log_warn("[NucleusManager] Not connected to Nucleus, cannot save terrain")
+            return False, None
+
+        try:
+            # Ensure city directory exists
+            city_path = self.get_city_data_path(city_name)
+            if not self._ensure_directory(city_path):
+                return False, None
+
+            # Get USD file path
+            usd_path = self.get_terrain_usd_path(city_name, bounds_hash)
+
+            # Save USD content
+            result = omni.client.write_file(usd_path, usd_content.encode('utf-8'))
+            if result != omni.client.Result.OK:
+                carb.log_error(f"[NucleusManager] Failed to write terrain USD file: {result}")
+                return False, None
+
+            # Save metadata as JSON sidecar file
+            metadata_path = f"{usd_path}.meta.json"
+            metadata['saved_at'] = datetime.utcnow().isoformat()
+            metadata_json = json.dumps(metadata, indent=2)
+
+            result = omni.client.write_file(metadata_path, metadata_json.encode('utf-8'))
+            if result != omni.client.Result.OK:
+                carb.log_warn(f"[NucleusManager] Failed to write terrain metadata: {result}")
+
+            carb.log_info(f"[NucleusManager] Successfully saved terrain to: {usd_path}")
+            return True, usd_path
+
+        except Exception as e:
+            carb.log_error(f"[NucleusManager] Error saving terrain to Nucleus: {e}")
+            return False, None
+
+    def load_terrain_from_nucleus(self, city_name: str, bounds_hash: str) -> Tuple[bool, Optional[str]]:
+        """
+        Load terrain USD data from Nucleus.
+
+        Args:
+            city_name: Name of the city
+            bounds_hash: Hash of the geographic bounds + resolution
+
+        Returns:
+            Tuple of (success: bool, usd_content: Optional[str])
+        """
+        if not self._connected:
+            return False, None
+
+        exists, usd_path = self.check_terrain_cache(city_name, bounds_hash)
+        if not exists:
+            return False, None
+
+        try:
+            # Read USD file
+            result, _, content = omni.client.read_file(usd_path)
+            if result != omni.client.Result.OK:
+                carb.log_error(f"[NucleusManager] Failed to read terrain USD file: {result}")
+                return False, None
+
+            usd_content = content.decode('utf-8')
+            carb.log_info(f"[NucleusManager] Successfully loaded terrain: {len(usd_content)} bytes from Nucleus")
+            return True, usd_content
+
+        except Exception as e:
+            carb.log_error(f"[NucleusManager] Error loading terrain from Nucleus: {e}")
+            return False, None
+
+    def get_terrain_metadata(self, city_name: str, bounds_hash: str) -> Optional[Dict]:
+        """
+        Load metadata for cached terrain.
+
+        Args:
+            city_name: Name of the city
+            bounds_hash: Hash of the geographic bounds + resolution
+
+        Returns:
+            Optional[Dict]: Metadata dictionary or None if not found
+        """
+        if not self._connected:
+            return None
+
+        usd_path = self.get_terrain_usd_path(city_name, bounds_hash)
+        metadata_path = f"{usd_path}.meta.json"
+
+        try:
+            result, _, content = omni.client.read_file(metadata_path)
+            if result != omni.client.Result.OK:
+                return None
+
+            metadata = json.loads(content.decode('utf-8'))
+            return metadata
+
+        except Exception as e:
+            carb.log_warn(f"[NucleusManager] Error loading terrain metadata: {e}")
+            return None
+
     def is_connected(self) -> bool:
         """Check if currently connected to Nucleus."""
         return self._connected
