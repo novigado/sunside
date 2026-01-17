@@ -1,6 +1,6 @@
 # City Shadow Analyzer - System Architecture
 
-**Last Updated**: January 17, 2026  
+**Last Updated**: January 17, 2026
 **Version**: 0.2.0
 
 ---
@@ -283,7 +283,7 @@ class Extension:
         # Initialize services
         # Register event handlers
         # Load configuration
-        
+
     def on_shutdown(self):
         """Called when extension is disabled"""
         # Cleanup resources
@@ -484,6 +484,6 @@ Component Memory Footprint:
 
 ---
 
-**Document Owner**: Development Team  
-**Review Cycle**: Quarterly  
+**Document Owner**: Development Team
+**Review Cycle**: Quarterly
 **Next Review**: April 2026

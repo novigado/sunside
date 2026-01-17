@@ -129,5 +129,5 @@ Templates are configured in `templates.toml`. Each template specifies:
 
 ---
 
-**Last Updated**: January 17, 2026  
+**Last Updated**: January 17, 2026
 **Cleanup Branch**: Phase 4 Complete

@@ -1,6 +1,6 @@
 # Nucleus Setup Guide
 
-**Last Updated**: January 17, 2026  
+**Last Updated**: January 17, 2026
 **Purpose**: Install and configure NVIDIA Omniverse Nucleus for City Shadow Analyzer caching
 
 ---
@@ -47,7 +47,7 @@ Nucleus is NVIDIA's content management server that provides:
 
 ## Method 1: Omniverse Navigator (Recommended)
 
-**Best for**: Windows users, beginners, most users  
+**Best for**: Windows users, beginners, most users
 **Time**: ~10 minutes
 
 ### Step 1: Download Omniverse Navigator
@@ -98,7 +98,7 @@ Nucleus is NVIDIA's content management server that provides:
 
 ## Method 2: Docker on Windows
 
-**Best for**: Development, containerized environments, CI/CD  
+**Best for**: Development, containerized environments, CI/CD
 **Time**: ~15 minutes
 
 ### Prerequisites
@@ -198,7 +198,7 @@ docker rm nucleus-local
 
 ## Method 3: Docker on Ubuntu/Linux
 
-**Best for**: Linux servers, production deployments, remote access  
+**Best for**: Linux servers, production deployments, remote access
 **Time**: ~30 minutes
 
 ### Prerequisites
@@ -413,7 +413,7 @@ docker stats
 
 ## Method 4: Omniverse Cloud
 
-**Best for**: Teams, enterprise, cloud deployments  
+**Best for**: Teams, enterprise, cloud deployments
 **Time**: ~5 minutes
 
 ### Step 1: Sign Up
@@ -656,6 +656,6 @@ docker-compose -f nucleus-stack-no-ssl.yml restart
 
 ---
 
-**Document Owner**: Development Team  
-**Last Updated**: January 17, 2026  
+**Document Owner**: Development Team
+**Last Updated**: January 17, 2026
 **Phase**: Phase 5 (Documentation Consolidation)

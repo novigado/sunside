@@ -141,23 +141,23 @@ import pytest
 
 class TestFeatureName:
     """Test suite for Feature Name."""
-    
+
     def setup_method(self):
         """Setup before each test."""
         pass
-    
+
     def teardown_method(self):
         """Cleanup after each test."""
         pass
-    
+
     def test_something(self):
         """Test description."""
         # Arrange
         input_data = ...
-        
+
         # Act
         result = function_to_test(input_data)
-        
+
         # Assert
         assert result == expected_value
 ```
@@ -240,5 +240,5 @@ See [Contributing Guide](../docs/development/CONTRIBUTING.md) for more details.
 
 ---
 
-**Last Updated**: January 17, 2026  
+**Last Updated**: January 17, 2026
 **Maintainer**: City Shadow Analyzer Team
