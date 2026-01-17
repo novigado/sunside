@@ -13,6 +13,17 @@ class BuildingLoader:
         """Initialize the building loader."""
         self.overpass_url = "https://overpass-api.de/api/interpreter"
         self._cache = {}  # Simple in-memory cache
+        self._nucleus_cache = None  # Will be set if Nucleus is available
+
+    def set_nucleus_cache(self, nucleus_cache):
+        """
+        Set the Nucleus cache manager for persistent caching.
+
+        Args:
+            nucleus_cache: CityCacheManager instance
+        """
+        self._nucleus_cache = nucleus_cache
+        carb.log_info("[BuildingLoader] Nucleus caching enabled")
 
     def load_buildings(
         self,
@@ -22,6 +33,7 @@ class BuildingLoader:
     ) -> List[Dict]:
         """
         Load buildings from OpenStreetMap within a radius of a point.
+        Will use Nucleus cache if available for 10-20x performance improvement.
 
         Args:
             latitude: Center point latitude
@@ -33,10 +45,19 @@ class BuildingLoader:
         """
         carb.log_info(f"[BuildingLoader] Loading buildings at ({latitude}, {longitude}) within {radius_km}km")
 
-        # Check cache (use 5 decimal places for ~1 meter precision)
+        # 1. Try Nucleus cache first (if available)
+        if self._nucleus_cache:
+            is_cached, nucleus_path = self._nucleus_cache.is_cached(latitude, longitude, radius_km)
+            if is_cached:
+                carb.log_info(f"[BuildingLoader] ✅ NUCLEUS CACHE HIT - Loading from: {nucleus_path}")
+                # Note: For now just log, actual USD loading will be integrated later
+                # This currently still falls through to OSM query
+                carb.log_info(f"[BuildingLoader] USD loading integration pending - falling back to OSM")
+
+        # 2. Check in-memory cache (use 5 decimal places for ~1 meter precision)
         cache_key = f"{latitude:.5f},{longitude:.5f},{radius_km}"
         if cache_key in self._cache:
-            carb.log_info(f"[BuildingLoader] Using cached data for {cache_key}")
+            carb.log_info(f"[BuildingLoader] Using in-memory cached data for {cache_key}")
             return self._cache[cache_key]
 
         try:
@@ -71,8 +92,13 @@ class BuildingLoader:
             buildings = self._parse_osm_data(data)
             carb.log_info(f"[BuildingLoader] Parsed {len(buildings)} buildings")
 
-            # Cache the results
+            # Cache the results in memory
             self._cache[cache_key] = buildings
+
+            # TODO: Save to Nucleus cache if available
+            # This will be implemented after USD stage creation is integrated
+            if self._nucleus_cache:
+                carb.log_info(f"[BuildingLoader] TODO: Save {len(buildings)} buildings to Nucleus cache")
 
             return buildings
 

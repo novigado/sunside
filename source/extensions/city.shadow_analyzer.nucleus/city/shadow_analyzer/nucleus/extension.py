@@ -18,7 +18,13 @@ class NucleusIntegrationExtension(omni.ext.IExt):
 
         # Initialize Nucleus connection manager
         from .nucleus_manager import NucleusManager
+        from . import _set_nucleus_manager
+
         self._nucleus_manager = NucleusManager()
+
+        # Register as global singleton
+        _set_nucleus_manager(self._nucleus_manager)
+        carb.log_info("[city.shadow_analyzer.nucleus] Registered global NucleusManager singleton")
 
         # Check if Nucleus is available
         self._is_connected = self._nucleus_manager.check_connection()
@@ -91,6 +97,11 @@ class NucleusIntegrationExtension(omni.ext.IExt):
     def on_shutdown(self):
         """Called when the extension shuts down."""
         carb.log_info("[city.shadow_analyzer.nucleus] Nucleus Integration Extension shutting down")
+
+        # Clear global singleton
+        from . import _clear_nucleus_manager
+        _clear_nucleus_manager()
+        carb.log_info("[city.shadow_analyzer.nucleus] Cleared global NucleusManager singleton")
 
         if hasattr(self, '_window') and self._window:
             self._window.destroy()

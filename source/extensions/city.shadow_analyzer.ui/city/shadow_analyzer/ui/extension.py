@@ -66,6 +66,15 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         # Create reference grid
         self._create_reference_grid()
 
+        # Try to set up Nucleus caching (deferred so it doesn't block UI startup)
+        asyncio.ensure_future(self._setup_nucleus_cache_async())
+
+    async def _setup_nucleus_cache_async(self):
+        """Initialize Nucleus caching asynchronously."""
+        # Wait a bit for nucleus extension to fully start
+        await asyncio.sleep(0.5)
+        self._setup_nucleus_cache()
+
     def on_shutdown(self):
         """Called when the extension shuts down."""
         self._deactivate_query_mode()
@@ -73,6 +82,36 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             self._window.destroy()
             self._window = None
         carb.log_info("[city.shadow_analyzer.ui] Shadow Analyzer UI shutting down")
+
+    def _setup_nucleus_cache(self):
+        """Initialize Nucleus caching if available."""
+        try:
+            # Import Nucleus manager
+            from city.shadow_analyzer.nucleus import get_nucleus_manager
+            from city.shadow_analyzer.nucleus.city_cache import CityCacheManager
+
+            # Get global nucleus manager instance
+            nucleus_manager = get_nucleus_manager()
+
+            # Create cache manager
+            self._nucleus_cache = CityCacheManager(nucleus_manager)
+
+            # Set cache on building loader
+            self._building_loader.set_nucleus_cache(self._nucleus_cache)
+
+            # Set cache on terrain loader (if it supports it)
+            if hasattr(self._terrain_loader, 'set_nucleus_cache'):
+                self._terrain_loader.set_nucleus_cache(self._nucleus_cache)
+
+            carb.log_info("[city.shadow_analyzer.ui] ✅ Nucleus caching enabled")
+
+        except RuntimeError as e:
+            # Nucleus extension not loaded yet
+            carb.log_warn(f"[city.shadow_analyzer.ui] Nucleus caching not available: {e}")
+        except Exception as e:
+            carb.log_error(f"[city.shadow_analyzer.ui] Error setting up Nucleus cache: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
 
     def _create_ui(self):
         """Create the main UI window."""
@@ -372,14 +411,23 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         # Schedule it
         asyncio.ensure_future(_do_load())
 
-    def _load_buildings_sync(self):
-        """Synchronous part of building loading."""
-        carb.log_info("[Shadow Analyzer] ===== LOADING SCENE FROM OPENSTREETMAP =====")
-        carb.log_info("[Shadow Analyzer] Button clicked - starting load process")
+    def _get_status_label(self):
+        """Get the appropriate status label based on which button was pressed."""
+        # Use map status label if it exists (combined button), otherwise use specific labels
+        if hasattr(self, '_map_status_label'):
+            return self._map_status_label
+        elif hasattr(self, '_building_status_label'):
+            return self._building_status_label
+        elif hasattr(self, '_terrain_status_label'):
+            return self._terrain_status_label
+        else:
+            # Fallback - shouldn't happen
+            return None
 
-        # Update status
-        self._building_status_label.text = "⏳ Loading scene from OpenStreetMap..."
-        self._building_status_label.style = {"font_size": 12, "color": 0xFFFFFF00}  # Yellow
+    def _load_buildings_sync(self):
+        """Synchronous part of building loading with Nucleus caching."""
+        carb.log_info("[Shadow Analyzer] ===== LOADING SCENE =====")
+        carb.log_info("[Shadow Analyzer] Button clicked - starting load process")
 
         # Get current location from UI
         self._latitude = self._lat_field.model.get_value_as_float()
@@ -387,10 +435,83 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
         carb.log_info(f"[Shadow Analyzer] Coordinates: ({self._latitude}, {self._longitude})")
 
+        # Get the appropriate status label
+        status_label = self._get_status_label()
+
+        # Get stage
+        stage = omni.usd.get_context().get_stage()
+        if not stage:
+            if status_label:
+                status_label.text = "Error: No stage available"
+                status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+            if hasattr(self, '_load_buildings_button'):
+                self._load_buildings_button.enabled = True
+                self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
+                self._load_buildings_button.set_style({"background_color": 0xFFFF9800})
+            return
+
         try:
-            # Clear cache to ensure fresh data for new location
+            # ========== STEP 1: Try to load from Nucleus cache ==========
+            if self._nucleus_cache:
+                carb.log_info("[Shadow Analyzer] 🔍 Checking Nucleus cache...")
+                if status_label:
+                    status_label.text = "🔍 Checking Nucleus cache..."
+                    status_label.style = {"font_size": 12, "color": 0xFFFFFF00}  # Yellow
+
+                success, cached_stage, metadata = self._nucleus_cache.load_usd_from_cache(
+                    self._latitude,
+                    self._longitude,
+                    radius=0.5
+                )
+
+                if success and cached_stage:
+                    carb.log_info("[Shadow Analyzer] ✅ CACHE HIT! Loading from Nucleus...")
+                    if metadata:
+                        carb.log_info(f"[Shadow Analyzer] Cached at: {metadata.get('saved_at', 'unknown')}")
+                        carb.log_info(f"[Shadow Analyzer] Buildings: {metadata.get('building_count', 0)}")
+                        carb.log_info(f"[Shadow Analyzer] Roads: {metadata.get('road_count', 0)}")
+
+                    # Clear existing scene
+                    for path in ["/World/Buildings", "/World/Roads", "/World/Ground"]:
+                        prim = stage.GetPrimAtPath(path)
+                        if prim:
+                            stage.RemovePrim(path)
+
+                    # Copy cached geometry to scene
+                    self._copy_cached_scene_to_stage(cached_stage, stage)
+
+                    # Update status (with safety check for metadata)
+                    if metadata:
+                        building_count = metadata.get('building_count', 0)
+                        road_count = metadata.get('road_count', 0)
+                        status_text = f"✓ Loaded from cache: {building_count} buildings, {road_count} roads"
+                    else:
+                        status_text = "✓ Loaded from cache"
+                    
+                    if status_label:
+                        status_label.text = status_text
+                        status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
+
+                    # Restore button
+                    if hasattr(self, '_load_buildings_button'):
+                        self._load_buildings_button.enabled = True
+                        self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
+                        self._load_buildings_button.set_style({"background_color": 0xFFFF9800})
+
+                    carb.log_info("[Shadow Analyzer] ✅ Successfully loaded scene from Nucleus cache!")
+                    return
+                else:
+                    carb.log_info("[Shadow Analyzer] ⚠️ Cache miss - will load from OpenStreetMap")
+
+            # ========== STEP 2: Cache miss - load from OpenStreetMap ==========
+            carb.log_info("[Shadow Analyzer] 🌍 Loading from OpenStreetMap...")
+            if status_label:
+                status_label.text = "⏳ Loading scene from OpenStreetMap..."
+                status_label.style = {"font_size": 12, "color": 0xFFFFFF00}  # Yellow
+
+            # Clear in-memory cache to ensure fresh data
             self._building_loader.clear_cache()
-            carb.log_info("[Shadow Analyzer] Cache cleared")
+            carb.log_info("[Shadow Analyzer] In-memory cache cleared")
 
             # Load comprehensive scene data from OpenStreetMap (0.5km radius)
             carb.log_info(f"[Shadow Analyzer] Fetching scene data at ({self._latitude}, {self._longitude})")
@@ -404,26 +525,30 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             roads_data = scene_data.get("roads", [])
 
             if not buildings_data and not roads_data:
-                self._building_status_label.text = "No data found in this area"
-                self._building_status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
+                if status_label:
+                    status_label.text = "No data found in this area"
+                    status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
                 carb.log_warn("[Shadow Analyzer] No data found")
 
                 # Restore button
-                self._load_buildings_button.enabled = True
-                self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
-                self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
+                if hasattr(self, '_load_buildings_button'):
+                    self._load_buildings_button.enabled = True
+                    self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
+                    self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
                 return
 
             # Get stage
             stage = omni.usd.get_context().get_stage()
             if not stage:
-                self._building_status_label.text = "Error: No stage available"
-                self._building_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+                if status_label:
+                    status_label.text = "Error: No stage available"
+                    status_label.style = {"font_size": 12, "color": 0xFFFF0000}
 
                 # Restore button
-                self._load_buildings_button.enabled = True
-                self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
-                self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
+                if hasattr(self, '_load_buildings_button'):
+                    self._load_buildings_button.enabled = True
+                    self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
+                    self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
                 return
 
             # Create geometry converter (needs stage)
@@ -467,6 +592,46 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     self._longitude
                 )
 
+            # ========== STEP 3: Save to Nucleus cache ==========
+            if self._nucleus_cache:
+                carb.log_info("[Shadow Analyzer] 💾 Saving scene to Nucleus cache...")
+                if status_label:
+                    status_label.text = "💾 Saving to Nucleus cache..."
+
+                try:
+                    # Create a temporary stage with just the scene geometry
+                    temp_stage = self._export_scene_to_temp_stage(stage, buildings_data, roads_data)
+
+                    # Prepare metadata
+                    metadata = {
+                        'building_count': len(buildings_data) if buildings_data else 0,
+                        'road_count': len(roads_data) if roads_data else 0,
+                        'bounds': {
+                            'center_lat': self._latitude,
+                            'center_lon': self._longitude,
+                            'radius_km': 0.5
+                        },
+                        'data_source': 'OpenStreetMap'
+                    }
+
+                    # Save to Nucleus
+                    success, nucleus_path = self._nucleus_cache.save_to_cache(
+                        self._latitude,
+                        self._longitude,
+                        0.5,
+                        temp_stage,
+                        metadata
+                    )
+
+                    if success:
+                        carb.log_info(f"[Shadow Analyzer] ✅ Saved to Nucleus: {nucleus_path}")
+                    else:
+                        carb.log_warn(f"[Shadow Analyzer] ⚠️ Failed to save to Nucleus cache")
+
+                except Exception as cache_error:
+                    carb.log_warn(f"[Shadow Analyzer] Cache save error: {cache_error}")
+                    # Continue anyway - cache failure shouldn't break the load
+
             # Update status
             status_parts = []
             if buildings_data:
@@ -475,27 +640,193 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 status_parts.append(f"{len(roads_data)} roads")
 
             status_text = f"✓ Loaded {', '.join(status_parts)} at ({self._latitude:.5f}, {self._longitude:.5f})"
-            self._building_status_label.text = status_text
-            self._building_status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
+            if status_label:
+                status_label.text = status_text
+                status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
             carb.log_info(f"[Shadow Analyzer] Successfully loaded scene at ({self._latitude}, {self._longitude})")
 
             # Restore button after success
-            self._load_buildings_button.enabled = True
-            self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
-            self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
+            if hasattr(self, '_load_buildings_button'):
+                self._load_buildings_button.enabled = True
+                self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
+                self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
 
         except Exception as e:
             error_msg = f"Error loading scene: {str(e)}"
-            self._building_status_label.text = error_msg
-            self._building_status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
+            if status_label:
+                status_label.text = error_msg
+                status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
             carb.log_error(f"[Shadow Analyzer] {error_msg}")
             import traceback
             carb.log_error(traceback.format_exc())
 
             # Restore button after error
-            self._load_buildings_button.enabled = True
-            self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
-            self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
+            if hasattr(self, '_load_buildings_button'):
+                self._load_buildings_button.enabled = True
+                self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
+                self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
+
+    def _copy_cached_scene_to_stage(self, cached_stage: Usd.Stage, target_stage: Usd.Stage):
+        """
+        Copy cached scene geometry from cached stage to target stage.
+
+        Args:
+            cached_stage: Stage loaded from Nucleus cache
+            target_stage: Current scene stage to copy into
+        """
+        from pxr import Sdf
+
+        carb.log_info("[Shadow Analyzer] Copying cached geometry to scene...")
+
+        # Copy each top-level prim from cache
+        for prim_name in ["Buildings", "Roads", "Ground"]:
+            source_path = f"/{prim_name}"
+            source_prim = cached_stage.GetPrimAtPath(source_path)
+
+            if source_prim and source_prim.IsValid():
+                target_path = f"/World/{prim_name}"
+
+                # Create parent if needed
+                world_prim = target_stage.GetPrimAtPath("/World")
+                if not world_prim:
+                    UsdGeom.Xform.Define(target_stage, "/World")
+
+                # Copy the prim hierarchy
+                Sdf.CopySpec(
+                    cached_stage.GetRootLayer(),
+                    source_path,
+                    target_stage.GetRootLayer(),
+                    target_path
+                )
+
+                carb.log_info(f"[Shadow Analyzer]   ✓ Copied {prim_name}")
+
+        carb.log_info("[Shadow Analyzer] Finished copying cached geometry")
+
+    def _export_scene_to_temp_stage(
+        self,
+        source_stage: Usd.Stage,
+        buildings_data: list,
+        roads_data: list
+    ) -> Usd.Stage:
+        """
+        Export current scene geometry to a temporary stage for caching.
+
+        Args:
+            source_stage: Current scene stage
+            buildings_data: Building data (for metadata)
+            roads_data: Road data (for metadata)
+
+        Returns:
+            Temporary USD stage containing only the cacheable geometry
+        """
+        from pxr import Sdf
+
+        carb.log_info("[Shadow Analyzer] Exporting scene to temporary stage...")
+
+        # Create in-memory temporary stage
+        temp_stage = Usd.Stage.CreateInMemory()
+
+        # Copy each element we want to cache
+        for prim_name in ["Buildings", "Roads", "Ground"]:
+            source_path = f"/World/{prim_name}"
+            source_prim = source_stage.GetPrimAtPath(source_path)
+
+            if source_prim and source_prim.IsValid():
+                target_path = f"/{prim_name}"
+
+                # Copy the prim hierarchy
+                Sdf.CopySpec(
+                    source_stage.GetRootLayer(),
+                    source_path,
+                    temp_stage.GetRootLayer(),
+                    target_path
+                )
+
+                carb.log_info(f"[Shadow Analyzer]   ✓ Exported {prim_name}")
+            else:
+                carb.log_warn(f"[Shadow Analyzer]   ⚠️ No {prim_name} prim found to export")
+
+        carb.log_info("[Shadow Analyzer] Finished exporting to temp stage")
+        return temp_stage
+
+    def _copy_cached_terrain_to_stage(self, cached_stage: Usd.Stage, target_stage: Usd.Stage):
+        """
+        Copy cached terrain geometry from cached stage to target stage.
+
+        Args:
+            cached_stage: Stage loaded from Nucleus cache
+            target_stage: Current scene stage to copy into
+        """
+        from pxr import Sdf
+
+        carb.log_info("[Shadow Analyzer] Copying cached terrain to scene...")
+
+        # Copy Terrain prim from cache
+        source_path = "/Terrain"
+        source_prim = cached_stage.GetPrimAtPath(source_path)
+
+        if source_prim and source_prim.IsValid():
+            target_path = "/World/Terrain"
+
+            # Create parent if needed
+            world_prim = target_stage.GetPrimAtPath("/World")
+            if not world_prim:
+                from pxr import UsdGeom
+                UsdGeom.Xform.Define(target_stage, "/World")
+
+            # Copy the terrain prim hierarchy
+            Sdf.CopySpec(
+                cached_stage.GetRootLayer(),
+                source_path,
+                target_stage.GetRootLayer(),
+                target_path
+            )
+
+            carb.log_info(f"[Shadow Analyzer]   ✓ Copied Terrain")
+        else:
+            carb.log_warn("[Shadow Analyzer]   ⚠️ No Terrain prim found in cached stage")
+
+        carb.log_info("[Shadow Analyzer] Finished copying cached terrain")
+
+    def _export_terrain_to_temp_stage(self, source_stage: Usd.Stage) -> Usd.Stage:
+        """
+        Export current terrain geometry to a temporary stage for caching.
+
+        Args:
+            source_stage: Current scene stage
+
+        Returns:
+            Temporary USD stage containing only the terrain geometry
+        """
+        from pxr import Sdf
+
+        carb.log_info("[Shadow Analyzer] Exporting terrain to temporary stage...")
+
+        # Create in-memory temporary stage
+        temp_stage = Usd.Stage.CreateInMemory()
+
+        # Copy Terrain prim
+        source_path = "/World/Terrain"
+        source_prim = source_stage.GetPrimAtPath(source_path)
+
+        if source_prim and source_prim.IsValid():
+            target_path = "/Terrain"
+
+            # Copy the prim hierarchy
+            Sdf.CopySpec(
+                source_stage.GetRootLayer(),
+                source_path,
+                temp_stage.GetRootLayer(),
+                target_path
+            )
+
+            carb.log_info(f"[Shadow Analyzer]   ✓ Exported Terrain")
+        else:
+            carb.log_warn("[Shadow Analyzer]   ⚠️ No Terrain prim found to export")
+
+        carb.log_info("[Shadow Analyzer] Finished exporting terrain to temp stage")
+        return temp_stage
 
     def _load_terrain(self):
         """Load terrain elevation data (async wrapper)."""
@@ -519,55 +850,104 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         asyncio.ensure_future(_do_load())
 
     def _load_terrain_sync(self):
-        """Synchronous part of terrain loading."""
+        """Synchronous part of terrain loading with Nucleus caching."""
         carb.log_info("[Shadow Analyzer] ===== LOADING TERRAIN ELEVATION DATA =====")
 
+        # Get the appropriate status label based on context
+        status_label = self._get_status_label()
+
         # Update status
-        self._terrain_status_label.text = "⏳ Loading terrain elevation data..."
-        self._terrain_status_label.style = {"font_size": 12, "color": 0xFFFFFF00}  # Yellow
+        if status_label:
+            status_label.text = "⏳ Loading terrain elevation data..."
+            status_label.style = {"font_size": 12, "color": 0xFFFFFF00}  # Yellow
 
         # Get current location from UI
         latitude = self._lat_field.model.get_value_as_float()
         longitude = self._lon_field.model.get_value_as_float()
+        grid_resolution = 20  # Default resolution
 
         carb.log_info(f"[Shadow Analyzer] Loading terrain at ({latitude}, {longitude})")
 
         try:
-            # Load elevation grid (500m radius, 20x20 grid)
+            # Get stage
+            stage = omni.usd.get_context().get_stage()
+            if not stage:
+                if status_label:
+                    status_label.text = "Error: No stage available"
+                    status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+                self._restore_terrain_button()
+                return
+
+            # STEP 1: Check Nucleus cache first
+            if self._nucleus_cache:
+                carb.log_info(f"[Shadow Analyzer] 🔍 Checking Nucleus terrain cache for ({latitude:.5f}, {longitude:.5f})...")
+                
+                success, cached_stage, metadata = self._nucleus_cache.load_terrain_from_cache(
+                    latitude, longitude, radius=0.5, resolution=grid_resolution
+                )
+                
+                if success and cached_stage:
+                    carb.log_info(f"[Shadow Analyzer] ✅ TERRAIN CACHE HIT! Loading from Nucleus...")
+                    carb.log_info(f"[Shadow Analyzer] Terrain cache metadata: {metadata}")
+                    
+                    # Clear existing terrain
+                    terrain_prim = stage.GetPrimAtPath("/World/Terrain")
+                    if terrain_prim:
+                        stage.RemovePrim("/World/Terrain")
+                    
+                    # Copy cached terrain to scene
+                    self._copy_cached_terrain_to_stage(cached_stage, stage)
+                    
+                    # Get elevation info from metadata (with safety check)
+                    if metadata:
+                        min_elev = metadata.get('min_elevation', 0.0)
+                        max_elev = metadata.get('max_elevation', 0.0)
+                    else:
+                        min_elev = 0.0
+                        max_elev = 0.0
+                    
+                    # Check if buildings exist and need to be adjusted for terrain
+                    buildings_prim = stage.GetPrimAtPath("/World/Buildings")
+                    if buildings_prim and buildings_prim.IsValid():
+                        carb.log_info(f"[Shadow Analyzer] Buildings exist - adjusting for terrain elevation...")
+                        self._adjust_buildings_for_terrain(stage)
+                        status_text = f"✓ Terrain loaded from cache: {min_elev:.1f}m to {max_elev:.1f}m (buildings adjusted)"
+                    else:
+                        status_text = f"✓ Terrain loaded from cache: {min_elev:.1f}m to {max_elev:.1f}m elevation"
+                    
+                    if status_label:
+                        status_label.text = status_text
+                        status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
+                    self._restore_terrain_button()
+                    return  # Done! No need to query Open-Elevation API
+
+            # STEP 2: Cache miss - load from Open-Elevation API
+            carb.log_info(f"[Shadow Analyzer] ❌ Terrain cache miss, loading from Open-Elevation API...")
+            
             result = self._terrain_loader.load_elevation_grid(
                 latitude,
                 longitude,
                 radius_m=500.0,
-                grid_resolution=20
+                grid_resolution=grid_resolution
             )
 
             if result is None:
-                self._terrain_status_label.text = "Error loading terrain data"
-                self._terrain_status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
+                if status_label:
+                    status_label.text = "Error loading terrain data"
+                    status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
                 carb.log_error("[Shadow Analyzer] Failed to load terrain data")
-
-                # Restore button
-                self._load_terrain_button.enabled = True
-                self._load_terrain_button.text = "Load Terrain Elevation Data"
-                self._load_terrain_button.set_style({"background_color": 0xFF8BC34A})
+                self._restore_terrain_button()
                 return
 
             elevation_grid, lat_spacing, lon_spacing = result
 
-            # Get stage
-            stage = omni.usd.get_context().get_stage()
-            if not stage:
-                self._terrain_status_label.text = "Error: No stage available"
-                self._terrain_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
-
-                # Restore button
-                self._load_terrain_button.enabled = True
-                self._load_terrain_button.text = "Load Terrain Elevation Data"
-                self._load_terrain_button.set_style({"background_color": 0xFF8BC34A})
-                return
-
             # Create terrain mesh generator
             terrain_generator = TerrainMeshGenerator(stage)
+
+            # Clear existing terrain
+            terrain_prim = stage.GetPrimAtPath("/World/Terrain")
+            if terrain_prim:
+                stage.RemovePrim("/World/Terrain")
 
             # Create terrain mesh
             carb.log_info(f"[Shadow Analyzer] Creating terrain mesh...")
@@ -581,40 +961,72 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 longitude
             )
 
-            if success:
-                min_elev = elevation_grid.min()
-                max_elev = elevation_grid.max()
+            if not success:
+                if status_label:
+                    status_label.text = "Error creating terrain mesh"
+                    status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+                self._restore_terrain_button()
+                return
 
-                # Check if buildings exist and need to be adjusted for terrain
-                buildings_prim = stage.GetPrimAtPath("/World/Buildings")
-                if buildings_prim and buildings_prim.IsValid():
-                    carb.log_info(f"[Shadow Analyzer] Buildings exist - adjusting for terrain elevation...")
-                    self._adjust_buildings_for_terrain(stage)
-                    status_text = f"✓ Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m (buildings adjusted)"
+            min_elev = elevation_grid.min()
+            max_elev = elevation_grid.max()
+
+            # STEP 3: Save to Nucleus cache
+            if self._nucleus_cache:
+                carb.log_info(f"[Shadow Analyzer] 💾 Saving terrain to Nucleus cache...")
+                
+                # Export terrain to temporary stage
+                temp_stage = self._export_terrain_to_temp_stage(stage)
+                
+                # Prepare metadata
+                metadata = {
+                    'min_elevation': float(min_elev),
+                    'max_elevation': float(max_elev),
+                    'grid_resolution': grid_resolution,
+                    'lat_spacing': float(lat_spacing),
+                    'lon_spacing': float(lon_spacing),
+                    'data_source': 'Open-Elevation API'
+                }
+                
+                # Save to cache
+                success, nucleus_path = self._nucleus_cache.save_terrain_to_cache(
+                    latitude, longitude, 0.5, grid_resolution, temp_stage, metadata
+                )
+                
+                if success:
+                    carb.log_info(f"[Shadow Analyzer] ✅ Saved terrain to Nucleus: {nucleus_path}")
                 else:
-                    status_text = f"✓ Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m elevation"
+                    carb.log_warn(f"[Shadow Analyzer] ⚠️ Failed to save terrain to Nucleus cache")
 
-                self._terrain_status_label.text = status_text
-                self._terrain_status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
-                carb.log_info(f"[Shadow Analyzer] Successfully loaded terrain")
+            # Check if buildings exist and need to be adjusted for terrain
+            buildings_prim = stage.GetPrimAtPath("/World/Buildings")
+            if buildings_prim and buildings_prim.IsValid():
+                carb.log_info(f"[Shadow Analyzer] Buildings exist - adjusting for terrain elevation...")
+                self._adjust_buildings_for_terrain(stage)
+                status_text = f"✓ Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m (buildings adjusted)"
             else:
-                self._terrain_status_label.text = "Error creating terrain mesh"
-                self._terrain_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+                status_text = f"✓ Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m elevation"
 
-            # Restore button
-            self._load_terrain_button.enabled = True
-            self._load_terrain_button.text = "Load Terrain Elevation Data"
-            self._load_terrain_button.set_style({"background_color": 0xFF8BC34A})
+            if status_label:
+                status_label.text = status_text
+                status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
+            carb.log_info(f"[Shadow Analyzer] Successfully loaded terrain")
+
+            self._restore_terrain_button()
 
         except Exception as e:
             error_msg = f"Error loading terrain: {str(e)}"
-            self._terrain_status_label.text = error_msg
-            self._terrain_status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
+            if status_label:
+                status_label.text = error_msg
+                status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
             carb.log_error(f"[Shadow Analyzer] {error_msg}")
             import traceback
             carb.log_error(traceback.format_exc())
+            self._restore_terrain_button()
 
-            # Restore button after error
+    def _restore_terrain_button(self):
+        """Restore terrain button to default state."""
+        if hasattr(self, '_load_terrain_button'):
             self._load_terrain_button.enabled = True
             self._load_terrain_button.text = "Load Terrain Elevation Data"
             self._load_terrain_button.set_style({"background_color": 0xFF8BC34A})
@@ -1047,154 +1459,16 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             # Wait for UI update
             await omni.kit.app.get_app().next_update_async()
 
-            # Do actual work
-            self._load_map_with_terrain_sync()
+            # Do actual work - load buildings first, then terrain
+            self._load_buildings_sync()
+            
+            # Small delay before terrain
+            await omni.kit.app.get_app().next_update_async()
+            
+            self._load_terrain_sync()
 
         # Schedule it
         asyncio.ensure_future(_do_load())
-
-    def _load_map_with_terrain_sync(self):
-        """Synchronous part of combined map and terrain loading."""
-        carb.log_info("[Shadow Analyzer] ===== LOADING MAP WITH TERRAIN =====")
-
-        # Get current location from UI
-        latitude = self._lat_field.model.get_value_as_float()
-        longitude = self._lon_field.model.get_value_as_float()
-
-        try:
-            # Step 1: Load terrain elevation data
-            carb.log_info(f"[Shadow Analyzer] Step 1/2: Loading terrain elevation...")
-            self._map_status_label.text = "⏳ Step 1/2: Loading terrain elevation..."
-            self._map_status_label.style = {"font_size": 12, "color": 0xFFFFFF00}  # Yellow
-
-            terrain_result = self._terrain_loader.load_elevation_grid(
-                latitude,
-                longitude,
-                radius_m=500.0,
-                grid_resolution=20
-            )
-
-            if terrain_result is None:
-                self._map_status_label.text = "❌ Error loading terrain data"
-                self._map_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
-                self._restore_map_button()
-                return
-
-            elevation_grid, lat_spacing, lon_spacing = terrain_result
-
-            # Get stage
-            stage = omni.usd.get_context().get_stage()
-            if not stage:
-                self._map_status_label.text = "❌ Error: No stage available"
-                self._map_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
-                self._restore_map_button()
-                return
-
-            # Create terrain mesh
-            terrain_generator = TerrainMeshGenerator(stage)
-            terrain_success = terrain_generator.create_terrain_mesh(
-                elevation_grid,
-                latitude,
-                longitude,
-                lat_spacing,
-                lon_spacing,
-                latitude,
-                longitude
-            )
-
-            if not terrain_success:
-                self._map_status_label.text = "❌ Error creating terrain mesh"
-                self._map_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
-                self._restore_map_button()
-                return
-
-            min_elev = elevation_grid.min()
-            max_elev = elevation_grid.max()
-            carb.log_info(f"[Shadow Analyzer] Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m")
-
-            # Step 2: Load buildings and roads
-            carb.log_info(f"[Shadow Analyzer] Step 2/2: Loading buildings and roads...")
-            self._map_status_label.text = "⏳ Step 2/2: Loading buildings and roads..."
-
-            # Update internal coordinates
-            self._latitude = latitude
-            self._longitude = longitude
-
-            # Clear cache for fresh data
-            self._building_loader.clear_cache()
-
-            # Load comprehensive scene data
-            scene_data = self._building_loader.load_scene_data(
-                latitude,
-                longitude,
-                radius_km=0.5
-            )
-
-            buildings_data = scene_data.get("buildings", [])
-            roads_data = scene_data.get("roads", [])
-
-            if not buildings_data and not roads_data:
-                self._map_status_label.text = f"✓ Terrain loaded, but no buildings/roads found (elevation: {min_elev:.1f}m-{max_elev:.1f}m)"
-                self._map_status_label.style = {"font_size": 12, "color": 0xFFFFAA00}
-                self._restore_map_button()
-                return
-
-            # Create geometry converter
-            geometry_converter = BuildingGeometryConverter(stage)
-
-            # Clear existing scene elements
-            for path in ["/World/Buildings", "/World/Roads", "/World/Ground"]:
-                prim = stage.GetPrimAtPath(path)
-                if prim:
-                    stage.RemovePrim(path)
-
-            # Create ground plane
-            geometry_converter.create_ground_plane(
-                latitude,
-                longitude,
-                size=1000.0
-            )
-
-            # Create roads
-            if roads_data:
-                carb.log_info(f"[Shadow Analyzer] Creating {len(roads_data)} roads...")
-                geometry_converter.create_roads_from_data(
-                    roads_data,
-                    latitude,
-                    longitude
-                )
-
-            # Create buildings (they will automatically sit on terrain)
-            if buildings_data:
-                carb.log_info(f"[Shadow Analyzer] Creating {len(buildings_data)} buildings on terrain...")
-                geometry_converter.create_buildings_from_data(
-                    buildings_data,
-                    latitude,
-                    longitude
-                )
-
-            # Success!
-            status_parts = []
-            if buildings_data:
-                status_parts.append(f"{len(buildings_data)} buildings")
-            if roads_data:
-                status_parts.append(f"{len(roads_data)} roads")
-
-            status_text = f"✓ Loaded {', '.join(status_parts)} + terrain ({min_elev:.1f}m-{max_elev:.1f}m) at ({latitude:.5f}, {longitude:.5f})"
-            self._map_status_label.text = status_text
-            self._map_status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
-            carb.log_info(f"[Shadow Analyzer] Successfully loaded map with terrain")
-
-            self._restore_map_button()
-
-        except Exception as e:
-            error_msg = f"❌ Error loading map: {str(e)}"
-            self._map_status_label.text = error_msg
-            self._map_status_label.style = {"font_size": 12, "color": 0xFFFF0000}
-            carb.log_error(f"[Shadow Analyzer] {error_msg}")
-            import traceback
-            carb.log_error(traceback.format_exc())
-            self._restore_map_button()
 
     def _restore_map_button(self):
         """Restore map button to original state."""

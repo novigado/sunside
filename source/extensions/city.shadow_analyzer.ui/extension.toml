@@ -15,6 +15,7 @@ repository = ""
 "omni.ui" = {}
 "omni.usd" = {}
 "city.shadow_analyzer.sun" = {}
+"city.shadow_analyzer.nucleus" = {}
 "omni.kit.raycast.query" = {}
 "omni.kit.viewport.utility" = {}
 
