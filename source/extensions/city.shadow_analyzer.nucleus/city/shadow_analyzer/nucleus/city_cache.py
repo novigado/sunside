@@ -167,12 +167,96 @@ class CityCacheManager:
             carb.log_error(traceback.format_exc())
             return False, None, None
 
-    def _deserialize_usd_stage(self, usd_content: str) -> Optional[Usd.Stage]:
+    def save_to_cache(
+        self,
+        latitude: float,
+        longitude: float,
+        radius: float,
+        stage: Usd.Stage,
+        metadata: Dict
+    ) -> Tuple[bool, Optional[str]]:
         """
-        Deserialize USD content string to USD stage.
+        Save building/scene data to Nucleus cache.
 
         Args:
-            usd_content: USD file content as string
+            latitude: Center latitude
+            longitude: Center longitude
+            radius: Radius in kilometers
+            stage: USD stage containing scene geometry (buildings, roads, ground)
+            metadata: Dictionary with cache metadata (building_count, road_count, bounds, etc.)
+
+        Returns:
+            Tuple of (success: bool, nucleus_path: Optional[str])
+        """
+        if not self._nucleus_manager.is_connected():
+            carb.log_warn("[CityCacheManager] Not connected to Nucleus, cannot cache buildings")
+            return False, None
+
+        try:
+            city_name, bounds_hash = self.generate_cache_key(latitude, longitude, radius)
+
+            # Export stage to USD file
+            import tempfile
+            import os
+
+            temp_fd, temp_path = tempfile.mkstemp(suffix='.usd')
+            os.close(temp_fd)
+
+            try:
+                # Export stage to temporary file
+                stage.Export(temp_path)
+
+                # Read file content as binary (USD can be binary format)
+                with open(temp_path, 'rb') as f:
+                    usd_content = f.read()
+
+                # Add cache metadata
+                cache_metadata = {
+                    'latitude': latitude,
+                    'longitude': longitude,
+                    'radius_km': radius,
+                    'building_count': metadata.get('building_count', 0),
+                    'road_count': metadata.get('road_count', 0),
+                    'bounds': metadata.get('bounds', {}),
+                    'data_source': metadata.get('data_source', 'OpenStreetMap'),
+                    'cache_key': f"{city_name}/{bounds_hash}"
+                }
+
+                # Save to Nucleus (handles both binary and text USD formats)
+                success, nucleus_path = self._nucleus_manager.save_buildings_to_nucleus(
+                    city_name,
+                    bounds_hash,
+                    usd_content,  # Pass bytes directly
+                    cache_metadata
+                )
+
+                if success:
+                    carb.log_info(f"[CityCacheManager] Successfully cached buildings to: {nucleus_path}")
+                else:
+                    carb.log_error(f"[CityCacheManager] Failed to cache building data")
+
+                return success, nucleus_path
+
+            finally:
+                # Clean up temporary file
+                if os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except:
+                        pass  # Ignore cleanup errors
+
+        except Exception as e:
+            carb.log_error(f"[CityCacheManager] Error saving buildings to cache: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
+            return False, None
+
+    def _deserialize_usd_stage(self, usd_content) -> Optional[Usd.Stage]:
+        """
+        Deserialize USD content to USD stage.
+
+        Args:
+            usd_content: USD file content as string or bytes
 
         Returns:
             USD Stage or None if deserialization fails
@@ -185,8 +269,19 @@ class CityCacheManager:
         try:
             # Write content to temp file
             os.close(temp_fd)
-            with open(temp_path, 'w', encoding='utf-8') as f:
-                f.write(usd_content)
+            
+            # Handle multiple content types:
+            # - bytes: binary USD data
+            # - str: text USD data  
+            # - omni.client Content object: can be used as bytes
+            if isinstance(usd_content, str):
+                # Text format
+                with open(temp_path, 'w', encoding='utf-8') as f:
+                    f.write(usd_content)
+            else:
+                # Binary format or Content object - write as binary
+                with open(temp_path, 'wb') as f:
+                    f.write(usd_content)
 
             # Open stage from temp file
             stage = Usd.Stage.Open(temp_path)
@@ -355,8 +450,8 @@ class CityCacheManager:
                 # Export stage to temporary file
                 stage.Export(temp_path)
 
-                # Read file content
-                with open(temp_path, 'r', encoding='utf-8') as f:
+                # Read file content as binary (USD can be binary format)
+                with open(temp_path, 'rb') as f:
                     usd_content = f.read()
 
                 # Add cache metadata

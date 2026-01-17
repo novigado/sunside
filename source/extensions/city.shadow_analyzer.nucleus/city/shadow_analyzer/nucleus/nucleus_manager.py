@@ -189,7 +189,7 @@ class NucleusManager:
         self,
         city_name: str,
         bounds_hash: str,
-        usd_content: str,
+        usd_content,  # Can be str or bytes
         metadata: Dict
     ) -> Tuple[bool, Optional[str]]:
         """
@@ -198,7 +198,7 @@ class NucleusManager:
         Args:
             city_name: Name of the city
             bounds_hash: Hash of the geographic bounds
-            usd_content: USD file content as string
+            usd_content: USD file content as string or bytes
             metadata: Dictionary of metadata (bounds, building count, timestamp, etc.)
 
         Returns:
@@ -217,8 +217,11 @@ class NucleusManager:
             # Get USD file path
             usd_path = self.get_buildings_usd_path(city_name, bounds_hash)
 
-            # Save USD content
-            result = omni.client.write_file(usd_path, usd_content.encode('utf-8'))
+            # Save USD content (handle both string and bytes)
+            if isinstance(usd_content, str):
+                usd_content = usd_content.encode('utf-8')
+            
+            result = omni.client.write_file(usd_path, usd_content)
             if result != omni.client.Result.OK:
                 carb.log_error(f"[NucleusManager] Failed to write USD file: {result}")
                 return False, None
@@ -258,15 +261,15 @@ class NucleusManager:
             return False, None
 
         try:
-            # Read USD file
+            # Read USD file (can be binary or text format)
             result, _, content = omni.client.read_file(usd_path)
             if result != omni.client.Result.OK:
                 carb.log_error(f"[NucleusManager] Failed to read USD file: {result}")
                 return False, None
 
-            usd_content = content.decode('utf-8')
-            carb.log_info(f"[NucleusManager] Successfully loaded {len(usd_content)} bytes from Nucleus")
-            return True, usd_content
+            # Content object from omni.client can be used directly (works as bytes)
+            carb.log_info(f"[NucleusManager] Successfully loaded buildings from Nucleus")
+            return True, content
 
         except Exception as e:
             carb.log_error(f"[NucleusManager] Error loading from Nucleus: {e}")
@@ -294,7 +297,8 @@ class NucleusManager:
             if result != omni.client.Result.OK:
                 return None
 
-            metadata = json.loads(content.decode('utf-8'))
+            # Convert Content object to bytes for json.loads
+            metadata = json.loads(bytes(content))
             return metadata
 
         except Exception as e:
@@ -409,7 +413,7 @@ class NucleusManager:
         self,
         city_name: str,
         bounds_hash: str,
-        usd_content: str,
+        usd_content: bytes,
         metadata: Dict
     ) -> Tuple[bool, Optional[str]]:
         """
@@ -418,7 +422,7 @@ class NucleusManager:
         Args:
             city_name: Name of the city
             bounds_hash: Hash of the geographic bounds + resolution
-            usd_content: USD file content as string
+            usd_content: USD file content as bytes (can be binary USDC format)
             metadata: Dictionary of metadata (bounds, resolution, timestamp, etc.)
 
         Returns:
@@ -437,8 +441,11 @@ class NucleusManager:
             # Get USD file path
             usd_path = self.get_terrain_usd_path(city_name, bounds_hash)
 
-            # Save USD content
-            result = omni.client.write_file(usd_path, usd_content.encode('utf-8'))
+            # Save USD content (already bytes, no need to encode)
+            if isinstance(usd_content, str):
+                usd_content = usd_content.encode('utf-8')
+            
+            result = omni.client.write_file(usd_path, usd_content)
             if result != omni.client.Result.OK:
                 carb.log_error(f"[NucleusManager] Failed to write terrain USD file: {result}")
                 return False, None
@@ -459,7 +466,7 @@ class NucleusManager:
             carb.log_error(f"[NucleusManager] Error saving terrain to Nucleus: {e}")
             return False, None
 
-    def load_terrain_from_nucleus(self, city_name: str, bounds_hash: str) -> Tuple[bool, Optional[str]]:
+    def load_terrain_from_nucleus(self, city_name: str, bounds_hash: str) -> Tuple[bool, Optional[bytes]]:
         """
         Load terrain USD data from Nucleus.
 
@@ -468,7 +475,7 @@ class NucleusManager:
             bounds_hash: Hash of the geographic bounds + resolution
 
         Returns:
-            Tuple of (success: bool, usd_content: Optional[str])
+            Tuple of (success: bool, usd_content: Optional[bytes|str])
         """
         if not self._connected:
             return False, None
@@ -478,14 +485,17 @@ class NucleusManager:
             return False, None
 
         try:
-            # Read USD file
+            # Read USD file (can be binary or text format)
             result, _, content = omni.client.read_file(usd_path)
             if result != omni.client.Result.OK:
                 carb.log_error(f"[NucleusManager] Failed to read terrain USD file: {result}")
                 return False, None
 
-            usd_content = content.decode('utf-8')
-            carb.log_info(f"[NucleusManager] Successfully loaded terrain: {len(usd_content)} bytes from Nucleus")
+            # Content object from omni.client can be used as bytes directly
+            # Just return it as-is for deserializer to handle
+            usd_content = content
+            
+            carb.log_info(f"[NucleusManager] Successfully loaded terrain from Nucleus")
             return True, usd_content
 
         except Exception as e:
@@ -514,7 +524,8 @@ class NucleusManager:
             if result != omni.client.Result.OK:
                 return None
 
-            metadata = json.loads(content.decode('utf-8'))
+            # Convert Content object to bytes for json.loads
+            metadata = json.loads(bytes(content))
             return metadata
 
         except Exception as e:
