@@ -269,10 +269,10 @@ class CityCacheManager:
         try:
             # Write content to temp file
             os.close(temp_fd)
-            
+
             # Handle multiple content types:
             # - bytes: binary USD data
-            # - str: text USD data  
+            # - str: text USD data
             # - omni.client Content object: can be used as bytes
             if isinstance(usd_content, str):
                 # Text format

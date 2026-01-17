@@ -1,7 +1,7 @@
 # Project Cleanup Plan 🧹
 
-**Branch**: `cleanup/documentation-and-unused-code`  
-**Date**: January 17, 2026  
+**Branch**: `cleanup/documentation-and-unused-code`
+**Date**: January 17, 2026
 **Goal**: Organize documentation, remove unused code, and create clear project structure
 
 ---
@@ -46,14 +46,14 @@ Currently scattered across root directory, needs organization:
 In `source/apps/`, several template/example apps that are not part of City Shadow Analyzer:
 
 **Keep (Active):**
-- ✅ `city.shadow_analyzer.kit.kit` - Main application
-- ✅ `city.shadow_analyzer.api.kit` - API version
-- ✅ `city.shadow_analyzer.api_service.kit` - API service
-- ✅ `shadow_api_service.kit` - Shadow API
+- ✅ `city.shadow_analyzer.kit.kit` - Main application (desktop UI)
+- ✅ `city.shadow_analyzer.api_service.kit` - API service (headless, production)
 
-**Consider Removing (Unused Templates):**
-- ❌ `my.sdg.app.kit` - Template app
-- ❌ `my_company.my_editor.kit` - Template editor
+**Remove (Unused/Duplicate):**
+- ❌ `my.sdg.app.kit` - Template app (NVIDIA example)
+- ❌ `my_company.my_editor.kit` - Template editor (NVIDIA example)
+- ❌ `city.shadow_analyzer.api.kit` - Empty file (never used)
+- ❌ `shadow_api_service.kit` - Duplicate of city.shadow_analyzer.api_service.kit
 
 ### Test Files (Root Level)
 - `test_api.py` - API tests
@@ -153,8 +153,10 @@ kit-app-template/
 ### Phase 2: Remove Unused Code 🗑️
 
 **Remove Template Apps:**
-- [ ] Delete `source/apps/my.sdg.app.kit`
-- [ ] Delete `source/apps/my_company.my_editor.kit`
+- [ ] Delete `source/apps/my.sdg.app.kit` (NVIDIA template)
+- [ ] Delete `source/apps/my_company.my_editor.kit` (NVIDIA template)
+- [ ] Delete `source/apps/city.shadow_analyzer.api.kit` (empty file)
+- [ ] Delete `source/apps/shadow_api_service.kit` (duplicate)
 - [ ] Check for any related template extensions
 
 **Move Test Files:**

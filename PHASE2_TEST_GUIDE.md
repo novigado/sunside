@@ -1,8 +1,8 @@
 # Phase 2 Caching - Test Guide 🧪
 
-**Test Date**: January 17, 2025  
-**Build Status**: ✅ Build Successful  
-**Server**: nucleus.swedencentral.cloudapp.azure.com  
+**Test Date**: January 17, 2025
+**Build Status**: ✅ Build Successful
+**Server**: nucleus.swedencentral.cloudapp.azure.com
 **Connection**: ✅ Connected
 
 ---

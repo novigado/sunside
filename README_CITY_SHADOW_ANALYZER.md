@@ -111,11 +111,11 @@
 Query shadows without the GUI:
 
 ```bash
-# Start API service
+# Start API service (headless mode)
 .\repo.bat launch -- source/apps/city.shadow_analyzer.api_service.kit
 
 # Query shadow at location
-curl -X POST http://localhost:8011/api/shadow/query \
+curl -X POST http://localhost:8000/api/shadow/query \
   -H "Content-Type: application/json" \
   -d '{
     "latitude": 37.7749,
@@ -241,9 +241,8 @@ kit-app-template/
 │
 ├── source/
 │   ├── apps/                      # Kit applications
-│   │   ├── city.shadow_analyzer.kit.kit        # Main app
-│   │   ├── city.shadow_analyzer.api.kit        # API mode
-│   │   └── city.shadow_analyzer.api_service.kit # Service mode
+│   │   ├── city.shadow_analyzer.kit.kit            # Main desktop app
+│   │   └── city.shadow_analyzer.api_service.kit    # Headless API service
 │   │
 │   └── extensions/                # Custom extensions
 │       ├── city.shadow_analyzer.ui/            # UI extension

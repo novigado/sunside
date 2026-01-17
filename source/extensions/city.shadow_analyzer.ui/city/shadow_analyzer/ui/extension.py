@@ -487,7 +487,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                         status_text = f"✓ Loaded from cache: {building_count} buildings, {road_count} roads"
                     else:
                         status_text = "✓ Loaded from cache"
-                    
+
                     if status_label:
                         status_label.text = status_text
                         status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
@@ -881,23 +881,23 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             # STEP 1: Check Nucleus cache first
             if self._nucleus_cache:
                 carb.log_info(f"[Shadow Analyzer] 🔍 Checking Nucleus terrain cache for ({latitude:.5f}, {longitude:.5f})...")
-                
+
                 success, cached_stage, metadata = self._nucleus_cache.load_terrain_from_cache(
                     latitude, longitude, radius=0.5, resolution=grid_resolution
                 )
-                
+
                 if success and cached_stage:
                     carb.log_info(f"[Shadow Analyzer] ✅ TERRAIN CACHE HIT! Loading from Nucleus...")
                     carb.log_info(f"[Shadow Analyzer] Terrain cache metadata: {metadata}")
-                    
+
                     # Clear existing terrain
                     terrain_prim = stage.GetPrimAtPath("/World/Terrain")
                     if terrain_prim:
                         stage.RemovePrim("/World/Terrain")
-                    
+
                     # Copy cached terrain to scene
                     self._copy_cached_terrain_to_stage(cached_stage, stage)
-                    
+
                     # Get elevation info from metadata (with safety check)
                     if metadata:
                         min_elev = metadata.get('min_elevation', 0.0)
@@ -905,7 +905,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     else:
                         min_elev = 0.0
                         max_elev = 0.0
-                    
+
                     # Check if buildings exist and need to be adjusted for terrain
                     buildings_prim = stage.GetPrimAtPath("/World/Buildings")
                     if buildings_prim and buildings_prim.IsValid():
@@ -914,7 +914,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                         status_text = f"✓ Terrain loaded from cache: {min_elev:.1f}m to {max_elev:.1f}m (buildings adjusted)"
                     else:
                         status_text = f"✓ Terrain loaded from cache: {min_elev:.1f}m to {max_elev:.1f}m elevation"
-                    
+
                     if status_label:
                         status_label.text = status_text
                         status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
@@ -923,7 +923,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
             # STEP 2: Cache miss - load from Open-Elevation API
             carb.log_info(f"[Shadow Analyzer] ❌ Terrain cache miss, loading from Open-Elevation API...")
-            
+
             result = self._terrain_loader.load_elevation_grid(
                 latitude,
                 longitude,
@@ -974,10 +974,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             # STEP 3: Save to Nucleus cache
             if self._nucleus_cache:
                 carb.log_info(f"[Shadow Analyzer] 💾 Saving terrain to Nucleus cache...")
-                
+
                 # Export terrain to temporary stage
                 temp_stage = self._export_terrain_to_temp_stage(stage)
-                
+
                 # Prepare metadata
                 metadata = {
                     'min_elevation': float(min_elev),
@@ -987,12 +987,12 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     'lon_spacing': float(lon_spacing),
                     'data_source': 'Open-Elevation API'
                 }
-                
+
                 # Save to cache
                 success, nucleus_path = self._nucleus_cache.save_terrain_to_cache(
                     latitude, longitude, 0.5, grid_resolution, temp_stage, metadata
                 )
-                
+
                 if success:
                     carb.log_info(f"[Shadow Analyzer] ✅ Saved terrain to Nucleus: {nucleus_path}")
                 else:
@@ -1461,10 +1461,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
             # Do actual work - load buildings first, then terrain
             self._load_buildings_sync()
-            
+
             # Small delay before terrain
             await omni.kit.app.get_app().next_update_async()
-            
+
             self._load_terrain_sync()
 
         # Schedule it
