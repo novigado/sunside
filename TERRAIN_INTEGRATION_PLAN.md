@@ -1,7 +1,7 @@
 # Terrain Elevation Integration Plan
 
-**Branch**: `feature/terrain-elevation-integration`  
-**Created**: 2026-01-18  
+**Branch**: `feature/terrain-elevation-integration`
+**Created**: 2026-01-18
 **Status**: Planning
 
 ## Objective
@@ -14,15 +14,15 @@ Re-enable terrain loading and fix the building/terrain elevation coordination is
 ## Current State
 
 ### What Works
-✅ GPS coordinate accuracy - markers appear at correct locations  
-✅ Buildings and roads properly aligned (share same reference point)  
-✅ Shadow analysis works correctly  
-✅ Query markers visible with appropriate size (3m radius)  
+✅ GPS coordinate accuracy - markers appear at correct locations
+✅ Buildings and roads properly aligned (share same reference point)
+✅ Shadow analysis works correctly
+✅ Query markers visible with appropriate size (3m radius)
 
 ### What's Disabled
-❌ Terrain loading temporarily commented out in `_load_map_with_terrain()`  
-❌ Buildings load flat on Y=0 ground plane  
-❌ No elevation data visualization  
+❌ Terrain loading temporarily commented out in `_load_map_with_terrain()`
+❌ Buildings load flat on Y=0 ground plane
+❌ No elevation data visualization
 
 ## Problem Analysis
 
@@ -38,7 +38,7 @@ Buildings are created with base vertices at Y=0 (flat ground), but terrain mesh 
 ## Proposed Solutions
 
 ### Option 1: Load Terrain First, Then Buildings at Terrain Elevation
-**Pros**: Clean - buildings created at correct elevation from the start  
+**Pros**: Clean - buildings created at correct elevation from the start
 **Cons**: Terrain loader needs building reference point (circular dependency)
 
 **Steps**:
@@ -47,7 +47,7 @@ Buildings are created with base vertices at Y=0 (flat ground), but terrain mesh 
 3. Create buildings, querying terrain elevation for base vertices
 
 ### Option 2: Create Buildings with Elevation Offset
-**Pros**: Simple - just add elevation offset during building creation  
+**Pros**: Simple - just add elevation offset during building creation
 **Cons**: Need to query terrain elevation API during building creation
 
 **Steps**:
@@ -58,7 +58,7 @@ Buildings are created with base vertices at Y=0 (flat ground), but terrain mesh 
 5. Load terrain mesh (may have hills/valleys around base)
 
 ### Option 3: Improve Current Adjustment Approach
-**Pros**: Minimal code changes  
+**Pros**: Minimal code changes
 **Cons**: Still doing adjustment after creation (complexity)
 
 **Steps**:
@@ -68,7 +68,7 @@ Buildings are created with base vertices at Y=0 (flat ground), but terrain mesh 
 4. Test with various terrain profiles
 
 ### Option 4: Flat Ground Only (No Terrain)
-**Pros**: Simplest - everything works now  
+**Pros**: Simplest - everything works now
 **Cons**: No realistic elevation visualization
 
 **Steps**:
@@ -78,36 +78,44 @@ Buildings are created with base vertices at Y=0 (flat ground), but terrain mesh 
 
 ## Recommended Approach
 
-**Option 2**: Create buildings with elevation offset
+**Option 1**: Load Terrain First, Then Buildings at Terrain Elevation
 
 **Rationale**:
-- Avoids vertex manipulation after creation
-- Buildings created correctly from the start
-- Terrain is decorative - doesn't need perfect vertex-level accuracy
-- Average elevation good enough for shadow analysis
+- Cleanest approach - buildings created at correct elevation from start
+- Terrain and buildings share exact same reference point (critical for alignment)
+- Buildings can query terrain elevation during creation for precise placement
+- No circular dependency - calculate reference from raw building data first
+- Ensures terrain is positioned correctly with buildings and roads
 
 ## Implementation Plan
 
-### Phase 1: Calculate Average Terrain Elevation
-- [ ] Add function to get average elevation from terrain data
-- [ ] Store as scene metadata alongside reference point
+### Phase 1: Add Reference Point Calculation Helper
+- [x] Add `calculate_reference_point_from_buildings()` static method
+- [x] Returns (lat, lon) without creating any geometry
+- [x] Used by both terrain and building creation
 
-### Phase 2: Modify Building Creation
-- [ ] Pass elevation offset to `create_building_mesh()`
-- [ ] Adjust base vertices during creation (Y = 0 + elevation_offset)
-- [ ] Top vertices (Y = height + elevation_offset)
+### Phase 2: Modify Load Sequence
+- [ ] Load building/road data from OpenStreetMap API
+- [ ] Calculate reference point from building data
+- [ ] Load terrain with this reference point
+- [ ] Create terrain mesh (positioned at reference point)
+- [ ] Create buildings, querying terrain elevation for each building's base
+- [ ] Create roads using terrain elevation
 
-### Phase 3: Modify Ground Plane
-- [ ] Create ground plane at average elevation instead of Y=0
-- [ ] Or skip ground plane entirely if terrain is loaded
+### Phase 3: Add Terrain Elevation Query
+- [ ] Add method to `TerrainMeshGenerator` or `BuildingGeometryConverter`
+- [ ] Given (X, Z) scene coords, return terrain Y elevation
+- [ ] Use during building/road creation
 
-### Phase 4: Re-enable Terrain Loading
-- [ ] Uncomment terrain loading in `_load_map_with_terrain()`
-- [ ] Test with buildings at elevated base
+### Phase 4: Modify Building Creation
+- [ ] Pass terrain mesh/elevation data to building creation
+- [ ] For each building, query terrain elevation at its base position
+- [ ] Create base vertices at terrain elevation (not Y=0)
+- [ ] Top vertices at terrain elevation + building height
 
-### Phase 5: Marker Elevation
-- [ ] Update marker creation to use terrain elevation at query point
-- [ ] Query terrain at marker X,Z position, use that Y value
+### Phase 5: Update Ground Plane Logic
+- [ ] Skip ground plane creation if terrain is loaded
+- [ ] Or create ground plane at minimum terrain elevation
 
 ## Testing Checklist
 

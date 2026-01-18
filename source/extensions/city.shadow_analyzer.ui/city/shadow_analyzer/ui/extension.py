@@ -206,7 +206,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                              height=30)
 
                     carb.log_info("[Shadow Analyzer] Creating query button...")
-                    
+
                     # Create callback with immediate logging
                     def query_button_clicked():
                         try:
@@ -218,14 +218,14 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                             carb.log_error(f"!!!! EXCEPTION IN BUTTON CALLBACK: {e}")
                             import traceback
                             carb.log_error(traceback.format_exc())
-                    
+
                     carb.log_info(f"[Shadow Analyzer] Callback function created: {query_button_clicked}")
-                    
+
                     self._query_mode_button = ui.Button("Query Point at GPS Coordinates",
                              clicked_fn=query_button_clicked,
                              height=35,
                              style={"background_color": 0xFF2196F3})
-                    
+
                     carb.log_info(f"[Shadow Analyzer] Query button created successfully")
                     carb.log_info(f"[Shadow Analyzer] Button enabled: {self._query_mode_button.enabled}")
                     carb.log_info(f"[Shadow Analyzer] Button clicked_fn: {self._query_mode_button.set_clicked_fn}")
@@ -1153,7 +1153,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         if not self._query_mode_active:
             carb.log_error("[Shadow Analyzer] ⚠️ Query mode NOT active, returning early")
             return
-        
+
         carb.log_error("[Shadow Analyzer] ✓ Query mode IS active, proceeding...")
         carb.log_error(f"[Shadow Analyzer] ===== QUERYING GPS COORDINATES =====")
         carb.log_error(f"[Shadow Analyzer] Query: lat={self._query_latitude}, lon={self._query_longitude}")
@@ -1176,7 +1176,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             carb.log_error("[Shadow Analyzer] About to call load_reference_point_from_scene()...")
             has_buildings = self._geometry_converter.load_reference_point_from_scene()
             carb.log_error(f"[Shadow Analyzer] load_reference_point_from_scene() returned: {has_buildings}")
-            
+
             if not has_buildings:
                 carb.log_error("[Shadow Analyzer] ⚠️ NO BUILDINGS FOUND IN SCENE - using UI coordinates as reference")
                 carb.log_warn(f"[Shadow Analyzer] UI reference: ({self._latitude}, {self._longitude})")
@@ -1380,20 +1380,20 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._query_markers.append(marker_path)
 
         carb.log_error(f"[Shadow Analyzer] ✓ Marker created at ({position[0]:.2f}, {raised_position[1]:.2f}, {position[2]:.2f}) - Total: {len(self._query_markers)}")
-        
+
         # Validate marker was actually created
         created_prim = stage.GetPrimAtPath(marker_path)
         if created_prim and created_prim.IsValid():
             carb.log_error(f"[Shadow Analyzer] ✓✓ Marker prim exists and is valid")
             carb.log_error(f"[Shadow Analyzer] Marker type: {created_prim.GetTypeName()}")
             carb.log_error(f"[Shadow Analyzer] Marker path: {created_prim.GetPath()}")
-            
+
             # Check if it's visible
             imageable = UsdGeom.Imageable(created_prim)
             if imageable:
                 visibility = imageable.ComputeVisibility()
                 carb.log_error(f"[Shadow Analyzer] Marker visibility: {visibility}")
-            
+
             # Check bounding box
             bbox_cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ['default', 'render'])
             bbox = bbox_cache.ComputeWorldBound(created_prim)
@@ -1402,7 +1402,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 carb.log_error(f"[Shadow Analyzer] Marker bounding box: {bbox_range}")
         else:
             carb.log_error(f"[Shadow Analyzer] ❌❌ ERROR: Marker prim NOT FOUND or invalid!")
-        
+
         carb.log_error(f"[Shadow Analyzer] ==========================================")
 
         # Focus camera directly on the marker position
@@ -1727,8 +1727,182 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         except Exception as e:
             carb.log_error(f"[Shadow Analyzer] Error adjusting buildings for terrain: {e}")
 
+    def _load_osm_data_and_calculate_reference(self) -> Tuple:
+        """
+        Load OSM building and road data, calculate reference point from building bounding box.
+        Returns: (buildings_data, roads_data, reference_lat, reference_lon)
+        """
+        # Get current location from UI
+        latitude = self._lat_field.model.get_value_as_float()
+        longitude = self._lon_field.model.get_value_as_float()
+        
+        # Update status
+        status_label = self._get_status_label()
+        if status_label:
+            status_label.text = "⏳ Loading data from OpenStreetMap..."
+            status_label.style = {"font_size": 12, "color": 0xFFFFFF00}
+        
+        # Load OSM data
+        self._building_loader.clear_cache()
+        carb.log_info(f"[Shadow Analyzer] Fetching scene data at ({latitude}, {longitude})")
+        scene_data = self._building_loader.load_scene_data(latitude, longitude, radius_km=0.5)
+        
+        buildings_data = scene_data.get("buildings", [])
+        roads_data = scene_data.get("roads", [])
+        
+        if not buildings_data and not roads_data:
+            if status_label:
+                status_label.text = "No data found in this area"
+                status_label.style = {"font_size": 12, "color": 0xFFFF0000}
+            return ([], [], latitude, longitude)
+        
+        # Calculate reference point - use UI coordinates as requested by user
+        # This ensures terrain, buildings, and roads all share the same reference
+        reference_lat = latitude
+        reference_lon = longitude
+        
+        carb.log_info(f"[Shadow Analyzer] Using UI coordinates as reference point: ({reference_lat:.6f}, {reference_lon:.6f})")
+        carb.log_info(f"[Shadow Analyzer] Loaded {len(buildings_data)} buildings, {len(roads_data)} roads")
+        
+        return (buildings_data, roads_data, reference_lat, reference_lon)
+    
+    def _load_terrain_at_reference(self, reference_lat: float, reference_lon: float, from_combined_button=False) -> bool:
+        """
+        Load terrain elevation data and create terrain mesh at the given reference point.
+        Returns: True if terrain was loaded successfully, False otherwise
+        """
+        carb.log_info(f"[Shadow Analyzer] Loading terrain at ({reference_lat:.6f}, {reference_lon:.6f})")
+        
+        status_label = self._get_status_label()
+        if status_label:
+            status_label.text = "⏳ Loading terrain elevation data..."
+            status_label.style = {"font_size": 12, "color": 0xFFFFFF00}
+        
+        try:
+            stage = omni.usd.get_context().get_stage()
+            if not stage:
+                carb.log_error("[Shadow Analyzer] No stage available for terrain loading")
+                return False
+            
+            # Load terrain elevation grid
+            result = self._terrain_loader.load_elevation_grid(
+                reference_lat,
+                reference_lon,
+                radius_m=500.0,
+                grid_resolution=20
+            )
+            
+            if result is None:
+                carb.log_warn("[Shadow Analyzer] Failed to load terrain data - continuing without terrain")
+                return False
+            
+            elevation_grid, lat_spacing, lon_spacing = result
+            min_elev = elevation_grid.min()
+            max_elev = elevation_grid.max()
+            
+            carb.log_info(f"[Shadow Analyzer] Terrain elevation range: {min_elev:.1f}m to {max_elev:.1f}m")
+            
+            # Create terrain mesh
+            terrain_generator = TerrainMeshGenerator(stage)
+            
+            # Clear existing terrain
+            terrain_prim = stage.GetPrimAtPath("/World/Terrain")
+            if terrain_prim:
+                stage.RemovePrim("/World/Terrain")
+            
+            success = terrain_generator.create_terrain_mesh(
+                elevation_grid,
+                reference_lat,
+                reference_lon,
+                lat_spacing,
+                lon_spacing,
+                reference_lat,
+                reference_lon
+            )
+            
+            if success:
+                carb.log_info(f"[Shadow Analyzer] ✅ Terrain mesh created successfully")
+                if status_label:
+                    status_label.text = f"✓ Terrain loaded: {min_elev:.1f}m to {max_elev:.1f}m"
+                    status_label.style = {"font_size": 12, "color": 0xFF4CAF50}
+                return True
+            else:
+                carb.log_warn("[Shadow Analyzer] Failed to create terrain mesh")
+                return False
+                
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] Error loading terrain: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
+            return False
+    
+    def _create_buildings_and_roads_with_terrain(self, buildings_data, roads_data, reference_lat, reference_lon, has_terrain=False, from_combined_button=False):
+        """
+        Create buildings and roads, optionally using terrain elevation data.
+        """
+        status_label = self._get_status_label()
+        if status_label:
+            status_label.text = "⏳ Creating buildings and roads..."
+            status_label.style = {"font_size": 12, "color": 0xFFFFFF00}
+        
+        stage = omni.usd.get_context().get_stage()
+        if not stage:
+            carb.log_error("[Shadow Analyzer] No stage available")
+            return
+        
+        # Create geometry converter
+        geometry_converter = BuildingGeometryConverter(stage)
+        
+        # Clear existing scene elements (but not terrain!)
+        for path in ["/World/Buildings", "/World/Roads", "/World/Ground"]:
+            prim = stage.GetPrimAtPath(path)
+            if prim:
+                stage.RemovePrim(path)
+        
+        # Create ground plane ONLY if no terrain
+        if not has_terrain:
+            carb.log_info(f"[Shadow Analyzer] Creating ground plane at Y=0...")
+            geometry_converter.create_ground_plane(
+                reference_lat,
+                reference_lon,
+                size=1000.0
+            )
+        else:
+            carb.log_info(f"[Shadow Analyzer] Skipping ground plane (terrain loaded)")
+        
+        # Create roads
+        if roads_data:
+            carb.log_info(f"[Shadow Analyzer] Creating {len(roads_data)} roads...")
+            geometry_converter.create_roads_from_data(
+                roads_data,
+                reference_lat,
+                reference_lon
+            )
+        
+        # Create buildings
+        if buildings_data:
+            carb.log_info(f"[Shadow Analyzer] Creating {len(buildings_data)} buildings...")
+            
+            sample_ids = [b['id'] for b in buildings_data[:5]]
+            carb.log_info(f"[Shadow Analyzer] Sample building IDs: {sample_ids}")
+            
+            geometry_converter.create_buildings_from_data(
+                buildings_data,
+                reference_lat,
+                reference_lon
+            )
+        
+        # Update status
+        if status_label:
+            terrain_text = " with terrain" if has_terrain else ""
+            status_text = f"✓ Loaded {len(buildings_data)} buildings, {len(roads_data)} roads{terrain_text}"
+            status_label.text = status_text
+            status_label.style = {"font_size": 12, "color": 0xFF4CAF50}
+        
+        carb.log_info(f"[Shadow Analyzer] ✅ Scene creation complete")
+
     def _load_map_with_terrain(self):
-        """Load both terrain and buildings together (async wrapper)."""
+        # ...existing code...
         # Immediate status update
         self._map_status_label.text = "⏳ Starting to load map data..."
 
@@ -1743,24 +1917,43 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             await omni.kit.app.get_app().next_update_async()
 
             try:
-                # Do actual work - load buildings first, then terrain
-                # Pass from_combined_button=True to prevent individual button restoration
-                self._load_buildings_sync(from_combined_button=True)
-
-                # Small delay before terrain
+                # NEW APPROACH: Load terrain FIRST, then create buildings at terrain elevation
+                # This ensures perfect alignment between terrain and buildings/roads
+                
+                # STEP 1: Load OSM data and calculate reference point
+                carb.log_info("[Shadow Analyzer] === STEP 1: Loading OSM data ===")
+                buildings_data, roads_data, reference_lat, reference_lon = self._load_osm_data_and_calculate_reference()
+                
+                if not buildings_data and not roads_data:
+                    carb.log_warn("[Shadow Analyzer] No data found")
+                    self._restore_map_button()
+                    return
+                
+                # Wait for UI update
                 await omni.kit.app.get_app().next_update_async()
+                
+                # STEP 2: Load terrain with calculated reference point
+                carb.log_info(f"[Shadow Analyzer] === STEP 2: Loading terrain at reference ({reference_lat:.6f}, {reference_lon:.6f}) ===")
+                terrain_loaded = self._load_terrain_at_reference(reference_lat, reference_lon, from_combined_button=True)
+                
+                # Wait for UI update
+                await omni.kit.app.get_app().next_update_async()
+                
+                # STEP 3: Create buildings and roads using terrain elevation
+                carb.log_info("[Shadow Analyzer] === STEP 3: Creating buildings and roads ===")
+                self._create_buildings_and_roads_with_terrain(
+                    buildings_data, roads_data, reference_lat, reference_lon, 
+                    has_terrain=terrain_loaded, from_combined_button=True
+                )
 
-                # TEMPORARILY DISABLED: Terrain loading causes buildings to appear buried/floating
-                # TODO: Fix terrain elevation adjustment or create buildings at terrain elevation
-                # self._load_terrain_sync(from_combined_button=True)
-                carb.log_info("[Shadow Analyzer] ⚠️ Terrain loading temporarily disabled for coordinate testing")
-
-                # Restore the combined button after both operations complete
+                # Restore the combined button after all operations complete
                 self._restore_map_button()
 
             except Exception as e:
                 # If anything goes wrong, still restore the button
                 carb.log_error(f"[Shadow Analyzer] Error in combined map loading: {str(e)}")
+                import traceback
+                carb.log_error(traceback.format_exc())
                 self._restore_map_button()
 
         # Schedule it
