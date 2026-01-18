@@ -1324,13 +1324,13 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         marker_index = len(self._query_markers)
         marker_path = f"/World/QueryMarker_{marker_index}"
 
-        carb.log_info(f"[Shadow Analyzer] ========== CREATING MARKER ==========")
-        carb.log_info(f"[Shadow Analyzer] Marker #{marker_index} at path: {marker_path}")
-        carb.log_info(f"[Shadow Analyzer] Ground position: ({position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f})")
+        carb.log_error(f"[Shadow Analyzer] ========== CREATING MARKER ==========")
+        carb.log_error(f"[Shadow Analyzer] Marker #{marker_index} at path: {marker_path}")
+        carb.log_error(f"[Shadow Analyzer] Ground position: ({position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f})")
 
         # Check if marker already exists and remove it
         if stage.GetPrimAtPath(marker_path):
-            carb.log_info(f"[Shadow Analyzer] Removing existing marker at {marker_path}")
+            carb.log_error(f"[Shadow Analyzer] Removing existing marker at {marker_path}")
             stage.RemovePrim(marker_path)
 
         # Create sphere at query point (raised 10m above ground for visibility)
@@ -1340,7 +1340,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         # Set position - raise it 10m above ground level
         raised_position = Gf.Vec3d(position[0], position[1] + 10.0, position[2])
 
-        carb.log_info(f"[Shadow Analyzer] Raised position: ({raised_position[0]:.2f}, {raised_position[1]:.2f}, {raised_position[2]:.2f})")
+        carb.log_error(f"[Shadow Analyzer] Raised position: ({raised_position[0]:.2f}, {raised_position[1]:.2f}, {raised_position[2]:.2f})")
 
         xformable = UsdGeom.Xformable(marker)
         translate_ops = [op for op in xformable.GetOrderedXformOps() if op.GetOpType() == UsdGeom.XformOp.TypeTranslate]
@@ -1348,11 +1348,11 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         if translate_ops:
             # Use existing translate op
             translate_ops[0].Set(raised_position)
-            carb.log_info(f"[Shadow Analyzer] Updated existing translate op")
+            carb.log_error(f"[Shadow Analyzer] Updated existing translate op")
         else:
             # Add new translate op
             marker.AddTranslateOp().Set(raised_position)
-            carb.log_info(f"[Shadow Analyzer] Added new translate op")
+            carb.log_error(f"[Shadow Analyzer] Added new translate op")
 
         # Start with blue color (will be updated after shadow analysis)
         # Blue = query location, before we know shadow status
@@ -1370,8 +1370,8 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
         self._query_markers.append(marker_path)
 
-        carb.log_info(f"[Shadow Analyzer] ✓ Marker created at ({position[0]:.2f}, {raised_position[1]:.2f}, {position[2]:.2f}) - Total: {len(self._query_markers)}")
-        carb.log_info(f"[Shadow Analyzer] ==========================================")
+        carb.log_error(f"[Shadow Analyzer] ✓ Marker created at ({position[0]:.2f}, {raised_position[1]:.2f}, {position[2]:.2f}) - Total: {len(self._query_markers)}")
+        carb.log_error(f"[Shadow Analyzer] ==========================================")
 
         # Automatically focus camera on the marker
         self._focus_camera_on_marker(raised_position)
