@@ -16,6 +16,5 @@ repo_build.prebuild_copy {
 
 -- Apps: for each app generate batch files and a project based on kit files (e.g. my_name.my_app.kit)
 
-define_app("my_company.my_editor.kit")
-define_app("my.sdg.app.kit")
 define_app("city.shadow_analyzer.kit.kit")
+define_app("city.shadow_analyzer.api_service.kit")

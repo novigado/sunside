@@ -220,7 +220,7 @@ class NucleusManager:
             # Save USD content (handle both string and bytes)
             if isinstance(usd_content, str):
                 usd_content = usd_content.encode('utf-8')
-            
+
             result = omni.client.write_file(usd_path, usd_content)
             if result != omni.client.Result.OK:
                 carb.log_error(f"[NucleusManager] Failed to write USD file: {result}")
@@ -444,7 +444,7 @@ class NucleusManager:
             # Save USD content (already bytes, no need to encode)
             if isinstance(usd_content, str):
                 usd_content = usd_content.encode('utf-8')
-            
+
             result = omni.client.write_file(usd_path, usd_content)
             if result != omni.client.Result.OK:
                 carb.log_error(f"[NucleusManager] Failed to write terrain USD file: {result}")
@@ -494,7 +494,7 @@ class NucleusManager:
             # Content object from omni.client can be used as bytes directly
             # Just return it as-is for deserializer to handle
             usd_content = content
-            
+
             carb.log_info(f"[NucleusManager] Successfully loaded terrain from Nucleus")
             return True, usd_content
 
