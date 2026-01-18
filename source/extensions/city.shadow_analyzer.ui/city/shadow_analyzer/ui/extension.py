@@ -37,14 +37,14 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._terrain_loader = TerrainLoader()
         # Note: BuildingGeometryConverter and TerrainMeshGenerator are created when needed (requires stage)
 
-        # Default location (San Francisco, USA - good for testing terrain with hills)
-        self._latitude = 37.7749
-        self._longitude = -122.4194
+        # Default location (Gothenburg, Sweden - 57.749254, 12.263287)
+        self._latitude = 57.749253539442606
+        self._longitude = 12.263287434196503
         self._current_time = datetime.now(timezone.utc)
 
         # Query point location (default same as observer location)
-        self._query_latitude = 37.7749
-        self._query_longitude = -122.4194
+        self._query_latitude = 57.749253539442606
+        self._query_longitude = 12.263287434196503
 
         # Scene elements
         self._sun_light_prim_path = "/World/SunLight"
@@ -424,8 +424,12 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             # Fallback - shouldn't happen
             return None
 
-    def _load_buildings_sync(self):
-        """Synchronous part of building loading with Nucleus caching."""
+    def _load_buildings_sync(self, from_combined_button=False):
+        """Synchronous part of building loading with Nucleus caching.
+        
+        Args:
+            from_combined_button: If True, don't restore individual button (called from combined load)
+        """
         carb.log_info("[Shadow Analyzer] ===== LOADING SCENE =====")
         carb.log_info("[Shadow Analyzer] Button clicked - starting load process")
 
@@ -444,7 +448,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             if status_label:
                 status_label.text = "Error: No stage available"
                 status_label.style = {"font_size": 12, "color": 0xFFFF0000}
-            if hasattr(self, '_load_buildings_button'):
+            if hasattr(self, '_load_buildings_button') and not from_combined_button:
                 self._load_buildings_button.enabled = True
                 self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
                 self._load_buildings_button.set_style({"background_color": 0xFFFF9800})
@@ -493,7 +497,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                         status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
 
                     # Restore button
-                    if hasattr(self, '_load_buildings_button'):
+                    if hasattr(self, '_load_buildings_button') and not from_combined_button:
                         self._load_buildings_button.enabled = True
                         self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
                         self._load_buildings_button.set_style({"background_color": 0xFFFF9800})
@@ -531,7 +535,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 carb.log_warn("[Shadow Analyzer] No data found")
 
                 # Restore button
-                if hasattr(self, '_load_buildings_button'):
+                if hasattr(self, '_load_buildings_button') and not from_combined_button:
                     self._load_buildings_button.enabled = True
                     self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
                     self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
@@ -545,7 +549,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     status_label.style = {"font_size": 12, "color": 0xFFFF0000}
 
                 # Restore button
-                if hasattr(self, '_load_buildings_button'):
+                if hasattr(self, '_load_buildings_button') and not from_combined_button:
                     self._load_buildings_button.enabled = True
                     self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
                     self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
@@ -646,7 +650,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             carb.log_info(f"[Shadow Analyzer] Successfully loaded scene at ({self._latitude}, {self._longitude})")
 
             # Restore button after success
-            if hasattr(self, '_load_buildings_button'):
+            if hasattr(self, '_load_buildings_button') and not from_combined_button:
                 self._load_buildings_button.enabled = True
                 self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
                 self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
@@ -661,7 +665,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             carb.log_error(traceback.format_exc())
 
             # Restore button after error
-            if hasattr(self, '_load_buildings_button'):
+            if hasattr(self, '_load_buildings_button') and not from_combined_button:
                 self._load_buildings_button.enabled = True
                 self._load_buildings_button.text = "Load Buildings from OpenStreetMap"
                 self._load_buildings_button.set_style({"background_color": 0xFFFF9800})  # Original color
@@ -849,8 +853,12 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         # Schedule it
         asyncio.ensure_future(_do_load())
 
-    def _load_terrain_sync(self):
-        """Synchronous part of terrain loading with Nucleus caching."""
+    def _load_terrain_sync(self, from_combined_button=False):
+        """Synchronous part of terrain loading with Nucleus caching.
+        
+        Args:
+            from_combined_button: If True, don't restore individual button (called from combined load)
+        """
         carb.log_info("[Shadow Analyzer] ===== LOADING TERRAIN ELEVATION DATA =====")
 
         # Get the appropriate status label based on context
@@ -1012,7 +1020,8 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
             carb.log_info(f"[Shadow Analyzer] Successfully loaded terrain")
 
-            self._restore_terrain_button()
+            if not from_combined_button:
+                self._restore_terrain_button()
 
         except Exception as e:
             error_msg = f"Error loading terrain: {str(e)}"
@@ -1022,7 +1031,8 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             carb.log_error(f"[Shadow Analyzer] {error_msg}")
             import traceback
             carb.log_error(traceback.format_exc())
-            self._restore_terrain_button()
+            if not from_combined_button:
+                self._restore_terrain_button()
 
     def _restore_terrain_button(self):
         """Restore terrain button to default state."""
@@ -1120,8 +1130,8 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         meters_per_lon_degree = 111000.0 * math.cos(math.radians(self._query_latitude))
 
         # Map to scene coordinates (XZ plane with Y up, same as buildings)
-        z = lat_diff * meters_per_lat_degree    # Z = North/South (latitude)
-        x = lon_diff * meters_per_lon_degree    # X = East/West (longitude)
+        z = -(lat_diff * meters_per_lat_degree)    # Z = North/South (latitude), negated to fix north-south flip
+        x = lon_diff * meters_per_lon_degree       # X = East/West (longitude)
         y = 0.0  # Y = height (ground level)
 
         query_point = Gf.Vec3f(x, y, z)
@@ -1459,13 +1469,23 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             # Wait for UI update
             await omni.kit.app.get_app().next_update_async()
 
-            # Do actual work - load buildings first, then terrain
-            self._load_buildings_sync()
+            try:
+                # Do actual work - load buildings first, then terrain
+                # Pass from_combined_button=True to prevent individual button restoration
+                self._load_buildings_sync(from_combined_button=True)
 
-            # Small delay before terrain
-            await omni.kit.app.get_app().next_update_async()
+                # Small delay before terrain
+                await omni.kit.app.get_app().next_update_async()
 
-            self._load_terrain_sync()
+                self._load_terrain_sync(from_combined_button=True)
+
+                # Restore the combined button after both operations complete
+                self._restore_map_button()
+
+            except Exception as e:
+                # If anything goes wrong, still restore the button
+                carb.log_error(f"[Shadow Analyzer] Error in combined map loading: {str(e)}")
+                self._restore_map_button()
 
         # Schedule it
         asyncio.ensure_future(_do_load())

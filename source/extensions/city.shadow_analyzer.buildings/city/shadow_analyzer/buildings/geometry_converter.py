@@ -92,8 +92,8 @@ class BuildingGeometryConverter:
         meters_per_lat_degree = 111000.0
         meters_per_lon_degree = 111000.0 * math.cos(math.radians(lat))
 
-        z = lat_diff * meters_per_lat_degree  # Latitude -> Z (north-south)
-        x = lon_diff * meters_per_lon_degree  # Longitude -> X (east-west)
+        z = -(lat_diff * meters_per_lat_degree)   # Latitude -> Z (north-south), negated to fix north-south flip
+        x = lon_diff * meters_per_lon_degree      # Longitude -> X (east-west)
 
         return (x, z)
 
