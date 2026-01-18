@@ -1184,7 +1184,9 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
         # Convert GPS coordinates to scene coordinates using the SAME reference as buildings
         try:
+            carb.log_error("[Shadow Analyzer] About to call gps_to_scene_coords()...")
             x, z = self._geometry_converter.gps_to_scene_coords(self._query_latitude, self._query_longitude)
+            carb.log_error(f"[Shadow Analyzer] gps_to_scene_coords() returned: x={x}, z={z}")
             y = 0.0  # Y = height (ground level)
             query_point = Gf.Vec3f(x, y, z)
 
@@ -1192,10 +1194,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             lat_offset = self._query_latitude - self._geometry_converter.reference_lat
             lon_offset = self._query_longitude - self._geometry_converter.reference_lon
 
-            carb.log_info(f"[Shadow Analyzer] ========== COORDINATE CONVERSION ==========")
-            carb.log_info(f"[Shadow Analyzer] Query GPS: ({self._query_latitude:.6f}°, {self._query_longitude:.6f}°)")
-            carb.log_info(f"[Shadow Analyzer] Reference GPS: ({self._geometry_converter.reference_lat:.6f}°, {self._geometry_converter.reference_lon:.6f}°)")
-            carb.log_info(f"[Shadow Analyzer] GPS offset: {lat_offset:.6f}° lat, {lon_offset:.6f}° lon")
+            carb.log_error(f"[Shadow Analyzer] ========== COORDINATE CONVERSION ==========")
+            carb.log_error(f"[Shadow Analyzer] Query GPS: ({self._query_latitude:.6f}°, {self._query_longitude:.6f}°)")
+            carb.log_error(f"[Shadow Analyzer] Reference GPS: ({self._geometry_converter.reference_lat:.6f}°, {self._geometry_converter.reference_lon:.6f}°)")
+            carb.log_error(f"[Shadow Analyzer] GPS offset: {lat_offset:.6f}° lat, {lon_offset:.6f}° lon")
 
             # Calculate distance in meters
             meters_per_lat = 111000.0
@@ -1204,19 +1206,28 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             lon_distance = abs(lon_offset * meters_per_lon)
             total_distance = math.sqrt((lat_offset * meters_per_lat)**2 + (lon_offset * meters_per_lon)**2)
 
-            carb.log_info(f"[Shadow Analyzer] Distance from reference: {lat_distance:.1f}m N/S, {lon_distance:.1f}m E/W (total: {total_distance:.1f}m)")
-            carb.log_info(f"[Shadow Analyzer] Scene coordinates: X={query_point[0]:.2f}m, Y={query_point[1]:.2f}m, Z={query_point[2]:.2f}m")
-            carb.log_info(f"[Shadow Analyzer] ==========================================")
+            carb.log_error(f"[Shadow Analyzer] Distance from reference: {lat_distance:.1f}m N/S, {lon_distance:.1f}m E/W (total: {total_distance:.1f}m)")
+            carb.log_error(f"[Shadow Analyzer] Scene coordinates: X={query_point[0]:.2f}m, Y={query_point[1]:.2f}m, Z={query_point[2]:.2f}m")
+            carb.log_error(f"[Shadow Analyzer] ==========================================")
 
         except ValueError as e:
             carb.log_error(f"[Shadow Analyzer] ❌ Error converting coordinates: {e}")
             return
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] ❌❌❌ UNEXPECTED EXCEPTION in coordinate conversion: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
+            return
 
         # Create visual marker BEFORE shadow analysis
+        carb.log_error("[Shadow Analyzer] About to create marker...")
         self._create_query_marker(query_point)
+        carb.log_error("[Shadow Analyzer] Marker creation returned")
 
         # Query if this point is in sun or shadow
+        carb.log_error("[Shadow Analyzer] About to query shadow...")
         self._query_point_for_shadow(query_point, "/World/Ground")
+        carb.log_error("[Shadow Analyzer] Shadow query returned")
 
     def _query_point_for_shadow(self, point: Gf.Vec3f, hit_prim_path: str):
         """Query if a point is in sunlight or shadow using real ray casting."""
