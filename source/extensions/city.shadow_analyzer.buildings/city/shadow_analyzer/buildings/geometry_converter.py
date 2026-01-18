@@ -89,13 +89,79 @@ class BuildingGeometryConverter:
         lon_diff = lon - self.reference_lon
 
         # Convert to meters (approximately)
+        # Use reference latitude for consistent meter-per-degree calculation across all points
         meters_per_lat_degree = 111000.0
-        meters_per_lon_degree = 111000.0 * math.cos(math.radians(lat))
+        meters_per_lon_degree = 111000.0 * math.cos(math.radians(self.reference_lat))
 
         z = -(lat_diff * meters_per_lat_degree)   # Latitude -> Z (north-south), negated to fix north-south flip
         x = lon_diff * meters_per_lon_degree      # Longitude -> X (east-west)
 
         return (x, z)
+
+    @staticmethod
+    def calculate_buildings_center(buildings: List[Dict]) -> Tuple[float, float]:
+        """
+        Calculate the actual GPS center of a list of buildings.
+        This finds the center of the bounding box of all building coordinates.
+
+        Args:
+            buildings: List of building dictionaries with 'coordinates' containing (lat, lon) tuples
+
+        Returns:
+            Tuple of (center_lat, center_lon) representing the true center of the data
+        """
+        if not buildings:
+            raise ValueError("Cannot calculate center of empty building list")
+
+        min_lat = float('inf')
+        max_lat = float('-inf')
+        min_lon = float('inf')
+        max_lon = float('-inf')
+
+        # Find bounding box of all building coordinates
+        for building in buildings:
+            coordinates = building.get('coordinates', [])
+            for lat, lon in coordinates:
+                min_lat = min(min_lat, lat)
+                max_lat = max(max_lat, lat)
+                min_lon = min(min_lon, lon)
+                max_lon = max(max_lon, lon)
+
+        # Calculate center
+        center_lat = (min_lat + max_lat) / 2.0
+        center_lon = (min_lon + max_lon) / 2.0
+
+        carb.log_info(f"[BuildingConverter] Calculated actual building data center:")
+        carb.log_info(f"[BuildingConverter]   Bounding box: lat [{min_lat:.6f}, {max_lat:.6f}], lon [{min_lon:.6f}, {max_lon:.6f}]")
+        carb.log_info(f"[BuildingConverter]   Center: ({center_lat:.6f}, {center_lon:.6f})")
+
+        return (center_lat, center_lon)
+
+    def scene_coords_to_gps(self, x: float, z: float) -> Tuple[float, float]:
+        """
+        Convert scene coordinates back to GPS coordinates.
+
+        Args:
+            x: X coordinate in scene space
+            z: Z coordinate in scene space
+
+        Returns:
+            Tuple of (latitude, longitude) GPS coordinates
+        """
+        if self.reference_lat is None or self.reference_lon is None:
+            raise ValueError("Reference point not set. Call set_reference_point() first.")
+
+        # Convert meters back to degrees
+        meters_per_lat_degree = 111000.0
+        meters_per_lon_degree = 111000.0 * math.cos(math.radians(self.reference_lat))
+
+        lat_diff = -z / meters_per_lat_degree   # Inverted due to scene coordinate system
+        lon_diff = x / meters_per_lon_degree
+
+        latitude = self.reference_lat + lat_diff
+        longitude = self.reference_lon + lon_diff
+
+        return (latitude, longitude)
 
     def create_building_mesh(
         self,

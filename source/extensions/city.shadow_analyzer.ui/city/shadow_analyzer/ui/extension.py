@@ -1,6 +1,7 @@
 """Main UI extension for City Shadow Analyzer."""
 
 import asyncio
+import math
 import omni.ext
 import omni.ui as ui
 import omni.usd
@@ -35,6 +36,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._sun_calculator = SunCalculator()
         self._building_loader = BuildingLoader()
         self._terrain_loader = TerrainLoader()
+        self._geometry_converter = None  # Will be initialized when stage is available
         # Note: BuildingGeometryConverter and TerrainMeshGenerator are created when needed (requires stage)
 
         # Default location (Gothenburg, Sweden - 57.749254, 12.263287)
@@ -42,9 +44,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._longitude = 12.263287434196503
         self._current_time = datetime.now(timezone.utc)
 
-        # Query point location (default same as observer location)
-        self._query_latitude = 57.749253539442606
-        self._query_longitude = 12.263287434196503
+        # Query point location (at building center for visibility)
+        # Will be updated after buildings load with actual calculated center
+        self._query_latitude = 57.749254  # Approximate Gothenburg city center
+        self._query_longitude = 12.263287
 
         # Scene elements
         self._sun_light_prim_path = "/World/SunLight"
@@ -202,10 +205,30 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                              clicked_fn=self._create_test_scene,
                              height=30)
 
+                    carb.log_info("[Shadow Analyzer] Creating query button...")
+                    
+                    # Create callback with immediate logging
+                    def query_button_clicked():
+                        try:
+                            carb.log_error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                            carb.log_error("!!!! BUTTON WAS CLICKED !!!!")
+                            carb.log_error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                            self._toggle_query_mode()
+                        except Exception as e:
+                            carb.log_error(f"!!!! EXCEPTION IN BUTTON CALLBACK: {e}")
+                            import traceback
+                            carb.log_error(traceback.format_exc())
+                    
+                    carb.log_info(f"[Shadow Analyzer] Callback function created: {query_button_clicked}")
+                    
                     self._query_mode_button = ui.Button("Query Point at GPS Coordinates",
-                             clicked_fn=self._toggle_query_mode,
+                             clicked_fn=query_button_clicked,
                              height=35,
                              style={"background_color": 0xFF2196F3})
+                    
+                    carb.log_info(f"[Shadow Analyzer] Query button created successfully")
+                    carb.log_info(f"[Shadow Analyzer] Button enabled: {self._query_mode_button.enabled}")
+                    carb.log_info(f"[Shadow Analyzer] Button clicked_fn: {self._query_mode_button.set_clicked_fn}")
 
                     ui.Button("Clear Query Markers",
                              clicked_fn=self._clear_query_markers,
@@ -426,7 +449,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
     def _load_buildings_sync(self, from_combined_button=False):
         """Synchronous part of building loading with Nucleus caching.
-        
+
         Args:
             from_combined_button: If True, don't restore individual button (called from combined load)
         """
@@ -558,33 +581,41 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             # Create geometry converter (needs stage)
             geometry_converter = BuildingGeometryConverter(stage)
 
+            # Use UI coordinates as the reference point (what user requested)
+            # The building data is centered around this query point
+            reference_lat = self._latitude
+            reference_lon = self._longitude
+            carb.log_info(f"[Shadow Analyzer] Using UI coordinates as reference point: ({reference_lat}, {reference_lon})")
+
             # Clear existing scene elements
-            for path in ["/World/Buildings", "/World/Roads", "/World/Ground"]:
+            for path in ["/World/Buildings", "/World/Roads", "/World/Ground", "/World/Terrain"]:
                 prim = stage.GetPrimAtPath(path)
                 if prim:
                     stage.RemovePrim(path)
 
-            # Create ground plane first (underneath everything)
+            # Create ground plane ONLY if not loading terrain
+            # (terrain will provide the ground surface with elevation)
+            # Note: Ground plane is always created here because terrain is loaded separately
+            # If you're seeing terrain issues, the ground plane at Y=0 conflicts with elevated terrain
             carb.log_info(f"[Shadow Analyzer] Creating ground plane...")
             geometry_converter.create_ground_plane(
-                self._latitude,
-                self._longitude,
+                reference_lat,
+                reference_lon,
                 size=1000.0  # 1km x 1km ground
             )
 
-            # Create roads
+            # Create roads - use calculated reference
             if roads_data:
                 carb.log_info(f"[Shadow Analyzer] Creating {len(roads_data)} roads in scene...")
                 geometry_converter.create_roads_from_data(
                     roads_data,
-                    self._latitude,
-                    self._longitude
+                    reference_lat,
+                    reference_lon
                 )
 
-            # Create buildings
+            # Create buildings - use UI reference
             if buildings_data:
                 carb.log_info(f"[Shadow Analyzer] Creating {len(buildings_data)} buildings in scene...")
-                carb.log_info(f"[Shadow Analyzer] Reference point: ({self._latitude}, {self._longitude})")
 
                 # Log first few building IDs to verify different data
                 sample_ids = [b['id'] for b in buildings_data[:5]]
@@ -592,8 +623,8 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
                 geometry_converter.create_buildings_from_data(
                     buildings_data,
-                    self._latitude,
-                    self._longitude
+                    reference_lat,
+                    reference_lon
                 )
 
             # ========== STEP 3: Save to Nucleus cache ==========
@@ -855,7 +886,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
     def _load_terrain_sync(self, from_combined_button=False):
         """Synchronous part of terrain loading with Nucleus caching.
-        
+
         Args:
             from_combined_button: If True, don't restore individual button (called from combined load)
         """
@@ -1043,24 +1074,35 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
     def _toggle_query_mode(self):
         """Toggle query mode on/off."""
-        # Simplified: just perform a single query at viewport center
-        self._perform_center_query()
+        carb.log_error("[Shadow Analyzer] ========== ENTERED _toggle_query_mode ==========")
+        try:
+            carb.log_error("[Shadow Analyzer] ========== INSIDE TRY BLOCK ==========")
+            # Simplified: just perform a single query at viewport center
+            self._perform_center_query()
+            carb.log_error("[Shadow Analyzer] ========== AFTER _perform_center_query ==========")
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] ❌ ERROR in _toggle_query_mode: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
 
     def _perform_center_query(self):
         """Perform a shadow query at the specified GPS coordinates."""
-        carb.log_info("[Shadow Analyzer] Performing GPS coordinate query")
+        carb.log_error("[Shadow Analyzer] ========== ENTERED _perform_center_query ==========")
+        carb.log_error("[Shadow Analyzer] Performing GPS coordinate query")
 
         # Get query coordinates from UI
         self._query_latitude = self._query_lat_field.model.get_value_as_float()
         self._query_longitude = self._query_lon_field.model.get_value_as_float()
 
-        carb.log_info(f"[Shadow Analyzer] Query coordinates: lat={self._query_latitude}, lon={self._query_longitude}")
+        carb.log_error(f"[Shadow Analyzer] Query coordinates: lat={self._query_latitude}, lon={self._query_longitude}")
 
         # Ensure there's a reference grid for visual context
         self._create_reference_grid()
 
         # Temporarily enable query mode for this operation
         self._query_mode_active = True
+        carb.log_error(f"[Shadow Analyzer] Set _query_mode_active = {self._query_mode_active}")
+
 
         # Get viewport API
         viewport_api = get_viewport_from_window_name("Viewport")
@@ -1106,45 +1148,95 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
     def _on_viewport_click(self, x: float, y: float):
         """Handle query for specified GPS coordinates."""
+        carb.log_error(f"[Shadow Analyzer] ========== ENTERED _on_viewport_click x={x}, y={y} ==========")
+        carb.log_error(f"[Shadow Analyzer] _query_mode_active = {self._query_mode_active}")
         if not self._query_mode_active:
+            carb.log_error("[Shadow Analyzer] ⚠️ Query mode NOT active, returning early")
             return
-
-        carb.log_info(f"[Shadow Analyzer] ===== QUERYING GPS COORDINATES =====")
-        carb.log_info(f"[Shadow Analyzer] Query: lat={self._query_latitude}, lon={self._query_longitude}")
+        
+        carb.log_error("[Shadow Analyzer] ✓ Query mode IS active, proceeding...")
+        carb.log_error(f"[Shadow Analyzer] ===== QUERYING GPS COORDINATES =====")
+        carb.log_error(f"[Shadow Analyzer] Query: lat={self._query_latitude}, lon={self._query_longitude}")
 
         stage = omni.usd.get_context().get_stage()
         if not stage:
             carb.log_error("[Shadow Analyzer] No stage available")
             return
 
-        # Convert GPS coordinates to scene coordinates using the SAME system as buildings
-        # This ensures query point is in correct position relative to buildings
+        # Initialize geometry converter if needed
+        carb.log_error("[Shadow Analyzer] About to check geometry converter...")
+        if self._geometry_converter is None:
+            self._geometry_converter = BuildingGeometryConverter(stage)
+            carb.log_error("[Shadow Analyzer] Created NEW geometry converter instance")
+        else:
+            carb.log_error("[Shadow Analyzer] Using EXISTING geometry converter instance")
 
-        # Calculate offset from reference location (where buildings are centered)
-        lat_diff = self._query_latitude - self._latitude
-        lon_diff = self._query_longitude - self._longitude
+        # Try to load reference point from buildings in scene
+        try:
+            carb.log_error("[Shadow Analyzer] About to call load_reference_point_from_scene()...")
+            has_buildings = self._geometry_converter.load_reference_point_from_scene()
+            carb.log_error(f"[Shadow Analyzer] load_reference_point_from_scene() returned: {has_buildings}")
+            
+            if not has_buildings:
+                carb.log_error("[Shadow Analyzer] ⚠️ NO BUILDINGS FOUND IN SCENE - using UI coordinates as reference")
+                carb.log_warn(f"[Shadow Analyzer] UI reference: ({self._latitude}, {self._longitude})")
+                # Fall back to UI coordinates if no buildings loaded
+                self._geometry_converter.set_reference_point(self._latitude, self._longitude)
+            else:
+                carb.log_error(f"[Shadow Analyzer] ✓ Using building reference point: "
+                             f"({self._geometry_converter.reference_lat:.6f}, {self._geometry_converter.reference_lon:.6f})")
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] ❌❌❌ EXCEPTION in load_reference_point section: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
+            return
 
-        # Convert to meters (same as BuildingGeometryConverter)
-        import math
-        meters_per_lat_degree = 111000.0
-        meters_per_lon_degree = 111000.0 * math.cos(math.radians(self._query_latitude))
+        # Convert GPS coordinates to scene coordinates using the SAME reference as buildings
+        try:
+            carb.log_error("[Shadow Analyzer] About to call gps_to_scene_coords()...")
+            x, z = self._geometry_converter.gps_to_scene_coords(self._query_latitude, self._query_longitude)
+            carb.log_error(f"[Shadow Analyzer] gps_to_scene_coords() returned: x={x}, z={z}")
+            y = 0.0  # Y = height (ground level)
+            query_point = Gf.Vec3f(x, y, z)
 
-        # Map to scene coordinates (XZ plane with Y up, same as buildings)
-        z = -(lat_diff * meters_per_lat_degree)    # Z = North/South (latitude), negated to fix north-south flip
-        x = lon_diff * meters_per_lon_degree       # X = East/West (longitude)
-        y = 0.0  # Y = height (ground level)
+            # Calculate GPS offsets for logging
+            lat_offset = self._query_latitude - self._geometry_converter.reference_lat
+            lon_offset = self._query_longitude - self._geometry_converter.reference_lon
 
-        query_point = Gf.Vec3f(x, y, z)
+            carb.log_error(f"[Shadow Analyzer] ========== COORDINATE CONVERSION ==========")
+            carb.log_error(f"[Shadow Analyzer] Query GPS: ({self._query_latitude:.6f}°, {self._query_longitude:.6f}°)")
+            carb.log_error(f"[Shadow Analyzer] Reference GPS: ({self._geometry_converter.reference_lat:.6f}°, {self._geometry_converter.reference_lon:.6f}°)")
+            carb.log_error(f"[Shadow Analyzer] GPS offset: {lat_offset:.6f}° lat, {lon_offset:.6f}° lon")
 
-        carb.log_info(f"[Shadow Analyzer] GPS offset: {lat_diff:.6f}° lat, {lon_diff:.6f}° lon")
-        carb.log_info(f"[Shadow Analyzer] Distance: {abs(lat_diff * meters_per_lat_degree):.1f}m N/S, {abs(lon_diff * meters_per_lon_degree):.1f}m E/W")
-        carb.log_info(f"[Shadow Analyzer] Scene position: X={query_point[0]:.2f}m, Y={query_point[1]:.2f}m, Z={query_point[2]:.2f}m")
+            # Calculate distance in meters
+            meters_per_lat = 111000.0
+            meters_per_lon = 111000.0 * math.cos(math.radians(self._query_latitude))
+            lat_distance = abs(lat_offset * meters_per_lat)
+            lon_distance = abs(lon_offset * meters_per_lon)
+            total_distance = math.sqrt((lat_offset * meters_per_lat)**2 + (lon_offset * meters_per_lon)**2)
+
+            carb.log_error(f"[Shadow Analyzer] Distance from reference: {lat_distance:.1f}m N/S, {lon_distance:.1f}m E/W (total: {total_distance:.1f}m)")
+            carb.log_error(f"[Shadow Analyzer] Scene coordinates: X={query_point[0]:.2f}m, Y={query_point[1]:.2f}m, Z={query_point[2]:.2f}m")
+            carb.log_error(f"[Shadow Analyzer] ==========================================")
+
+        except ValueError as e:
+            carb.log_error(f"[Shadow Analyzer] ❌ Error converting coordinates: {e}")
+            return
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] ❌❌❌ UNEXPECTED EXCEPTION in coordinate conversion: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
+            return
 
         # Create visual marker BEFORE shadow analysis
+        carb.log_error("[Shadow Analyzer] About to create marker...")
         self._create_query_marker(query_point)
+        carb.log_error("[Shadow Analyzer] Marker creation returned")
 
         # Query if this point is in sun or shadow
+        carb.log_error("[Shadow Analyzer] About to query shadow...")
         self._query_point_for_shadow(query_point, "/World/Ground")
+        carb.log_error("[Shadow Analyzer] Shadow query returned")
 
     def _query_point_for_shadow(self, point: Gf.Vec3f, hit_prim_path: str):
         """Query if a point is in sunlight or shadow using real ray casting."""
@@ -1235,24 +1327,29 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         """Create a visual marker at the queried point."""
         stage = omni.usd.get_context().get_stage()
         if not stage:
-            carb.log_error("[Shadow Analyzer] No stage available for marker creation")
+            carb.log_error("[Shadow Analyzer] ❌ No stage available for marker creation")
             return
 
         marker_index = len(self._query_markers)
         marker_path = f"/World/QueryMarker_{marker_index}"
 
-        carb.log_info(f"[Shadow Analyzer] Creating marker #{marker_index} at {marker_path}")
+        carb.log_error(f"[Shadow Analyzer] ========== CREATING MARKER ==========")
+        carb.log_error(f"[Shadow Analyzer] Marker #{marker_index} at path: {marker_path}")
+        carb.log_error(f"[Shadow Analyzer] Ground position: ({position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f})")
 
         # Check if marker already exists and remove it
         if stage.GetPrimAtPath(marker_path):
+            carb.log_error(f"[Shadow Analyzer] Removing existing marker at {marker_path}")
             stage.RemovePrim(marker_path)
 
         # Create sphere at query point (raised 10m above ground for visibility)
         marker = UsdGeom.Sphere.Define(stage, marker_path)
-        marker.CreateRadiusAttr(10.0)  # 10 meter radius - VERY visible
+        marker.CreateRadiusAttr(3.0)  # 3 meter radius - small and precise
 
-        # Set position - raise it 10m above ground level
-        raised_position = Gf.Vec3d(position[0], position[1] + 10.0, position[2])
+        # Set position - raise it 5m above ground level
+        raised_position = Gf.Vec3d(position[0], position[1] + 5.0, position[2])
+
+        carb.log_error(f"[Shadow Analyzer] Raised position: ({raised_position[0]:.2f}, {raised_position[1]:.2f}, {raised_position[2]:.2f})")
 
         xformable = UsdGeom.Xformable(marker)
         translate_ops = [op for op in xformable.GetOrderedXformOps() if op.GetOpType() == UsdGeom.XformOp.TypeTranslate]
@@ -1260,13 +1357,15 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         if translate_ops:
             # Use existing translate op
             translate_ops[0].Set(raised_position)
+            carb.log_error(f"[Shadow Analyzer] Updated existing translate op")
         else:
             # Add new translate op
             marker.AddTranslateOp().Set(raised_position)
+            carb.log_error(f"[Shadow Analyzer] Added new translate op")
 
-        # Start with blue color (will be updated after shadow analysis)
-        # Blue = query location, before we know shadow status
-        color = Gf.Vec3f(0.3, 0.7, 1.0)  # Bright cyan/blue
+        # Start with BRIGHT MAGENTA color for maximum visibility during testing
+        # Will be updated after shadow analysis
+        color = Gf.Vec3f(1.0, 0.0, 1.0)  # Bright magenta/pink - impossible to miss!
 
         # If we already have a result, color accordingly
         if "SUNLIGHT" in self._query_result_label.text:
@@ -1280,7 +1379,36 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
         self._query_markers.append(marker_path)
 
-        carb.log_info(f"[Shadow Analyzer] ✓ Marker created at ({position[0]:.2f}, {raised_position[1]:.2f}, {position[2]:.2f}) - Total: {len(self._query_markers)}")
+        carb.log_error(f"[Shadow Analyzer] ✓ Marker created at ({position[0]:.2f}, {raised_position[1]:.2f}, {position[2]:.2f}) - Total: {len(self._query_markers)}")
+        
+        # Validate marker was actually created
+        created_prim = stage.GetPrimAtPath(marker_path)
+        if created_prim and created_prim.IsValid():
+            carb.log_error(f"[Shadow Analyzer] ✓✓ Marker prim exists and is valid")
+            carb.log_error(f"[Shadow Analyzer] Marker type: {created_prim.GetTypeName()}")
+            carb.log_error(f"[Shadow Analyzer] Marker path: {created_prim.GetPath()}")
+            
+            # Check if it's visible
+            imageable = UsdGeom.Imageable(created_prim)
+            if imageable:
+                visibility = imageable.ComputeVisibility()
+                carb.log_error(f"[Shadow Analyzer] Marker visibility: {visibility}")
+            
+            # Check bounding box
+            bbox_cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ['default', 'render'])
+            bbox = bbox_cache.ComputeWorldBound(created_prim)
+            if bbox:
+                bbox_range = bbox.ComputeAlignedRange()
+                carb.log_error(f"[Shadow Analyzer] Marker bounding box: {bbox_range}")
+        else:
+            carb.log_error(f"[Shadow Analyzer] ❌❌ ERROR: Marker prim NOT FOUND or invalid!")
+        
+        carb.log_error(f"[Shadow Analyzer] ==========================================")
+
+        # Focus camera directly on the marker position
+        carb.log_error("[Shadow Analyzer] Positioning camera to look at marker...")
+        self._focus_camera_on_marker(raised_position)
+        carb.log_error("[Shadow Analyzer] ✓ Camera repositioned")
 
     def _clear_query_markers(self):
         """Clear all query markers from the scene."""
@@ -1301,6 +1429,151 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._query_result_label.style = {"color": 0xFFFFFFFF, "font_size": 14}
         self._query_position_label.text = ""
         self._query_detail_label.text = ""
+
+    def _focus_camera_on_scene(self):
+        """Position camera for a good overview of the scene."""
+        carb.log_info("[Shadow Analyzer] Focusing camera on scene...")
+
+        stage = omni.usd.get_context().get_stage()
+        if not stage:
+            carb.log_warn("[Shadow Analyzer] No stage available")
+            return
+
+        try:
+            # Get the default perspective camera
+            camera_path = "/OmniverseKit_Persp"
+            camera_prim = stage.GetPrimAtPath(camera_path)
+
+            if not camera_prim or not camera_prim.IsValid():
+                carb.log_warn("[Shadow Analyzer] Default camera not found, trying /World/Camera")
+                camera_path = "/World/Camera"
+                camera_prim = stage.GetPrimAtPath(camera_path)
+
+            if camera_prim and camera_prim.IsValid():
+                from pxr import UsdGeom
+
+                camera_xform = UsdGeom.Xformable(camera_prim)
+
+                # Set camera to a good bird's-eye view position
+                # Position: 200m away on diagonal, 150m up
+                camera_pos = Gf.Vec3d(200, 150, 200)  # X, Y, Z
+
+                # Calculate rotation to look at origin
+                look_at = Gf.Vec3d(0, 0, 0)
+                direction = (look_at - camera_pos).GetNormalized()
+
+                # Calculate pitch and yaw
+                import math
+                xz_length = math.sqrt(direction[0]**2 + direction[2]**2)
+                pitch = math.degrees(math.atan2(-direction[1], xz_length))
+                yaw = math.degrees(math.atan2(direction[0], -direction[2]))
+
+                # Clear and set transforms
+                camera_xform.ClearXformOpOrder()
+
+                # Add translate
+                translate_op = camera_xform.AddTranslateOp()
+                translate_op.Set(camera_pos)
+
+                # Add rotations
+                rotate_y_op = camera_xform.AddRotateYOp()
+                rotate_y_op.Set(yaw)
+
+                rotate_x_op = camera_xform.AddRotateXOp()
+                rotate_x_op.Set(pitch)
+
+                carb.log_info(f"[Shadow Analyzer] Camera positioned at ({camera_pos[0]}, {camera_pos[1]}, {camera_pos[2]})")
+                carb.log_info(f"[Shadow Analyzer] Looking at origin with pitch={pitch:.1f}°, yaw={yaw:.1f}°")
+
+            else:
+                carb.log_warn("[Shadow Analyzer] Could not find valid camera to position")
+
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] Error positioning camera: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
+
+    def _focus_camera_on_marker(self, marker_position: Gf.Vec3d):
+        """Focus camera on a specific marker position."""
+        carb.log_info(f"[Shadow Analyzer] Focusing camera on marker at ({marker_position[0]:.2f}, {marker_position[1]:.2f}, {marker_position[2]:.2f})")
+
+        stage = omni.usd.get_context().get_stage()
+        if not stage:
+            carb.log_warn("[Shadow Analyzer] No stage available for camera focus")
+            return
+
+        try:
+            # Get the default perspective camera
+            camera_path = "/OmniverseKit_Persp"
+            camera_prim = stage.GetPrimAtPath(camera_path)
+
+            if not camera_prim or not camera_prim.IsValid():
+                carb.log_warn("[Shadow Analyzer] Default camera not found, trying /World/Camera")
+                camera_path = "/World/Camera"
+                camera_prim = stage.GetPrimAtPath(camera_path)
+
+            if camera_prim and camera_prim.IsValid():
+                # Position camera to look at marker from above and to the side
+                # Camera position: offset from marker by 100m back, 100m up, 100m to the side
+                camera_pos = Gf.Vec3d(
+                    marker_position[0] + 100.0,  # 100m east
+                    marker_position[1] + 100.0,  # 100m up
+                    marker_position[2] + 100.0   # 100m south
+                )
+
+                carb.log_info(f"[Shadow Analyzer] Setting camera position to ({camera_pos[0]:.2f}, {camera_pos[1]:.2f}, {camera_pos[2]:.2f})")
+
+                # Set camera translation
+                xformable = UsdGeom.Xformable(camera_prim)
+                translate_op = None
+
+                # Find or create translate op
+                for op in xformable.GetOrderedXformOps():
+                    if op.GetOpType() == UsdGeom.XformOp.TypeTranslate:
+                        translate_op = op
+                        break
+
+                if translate_op:
+                    translate_op.Set(camera_pos)
+                else:
+                    xformable.AddTranslateOp().Set(camera_pos)
+
+                # Calculate look-at rotation (camera looks at marker)
+                direction = Gf.Vec3d(
+                    marker_position[0] - camera_pos[0],
+                    marker_position[1] - camera_pos[1],
+                    marker_position[2] - camera_pos[2]
+                )
+                direction.Normalize()
+
+                # Simple rotation to look at marker (approximate)
+                import math
+                pitch = math.degrees(math.asin(-direction[1]))  # Look down
+                yaw = math.degrees(math.atan2(direction[0], -direction[2]))  # Look towards marker
+
+                carb.log_info(f"[Shadow Analyzer] Camera rotation: pitch={pitch:.1f}°, yaw={yaw:.1f}°")
+
+                # Set camera rotation
+                rotate_op = None
+                for op in xformable.GetOrderedXformOps():
+                    if op.GetOpType() == UsdGeom.XformOp.TypeRotateXYZ:
+                        rotate_op = op
+                        break
+
+                rotation = Gf.Vec3d(pitch, yaw, 0)
+                if rotate_op:
+                    rotate_op.Set(rotation)
+                else:
+                    xformable.AddRotateXYZOp().Set(rotation)
+
+                carb.log_info(f"[Shadow Analyzer] ✓ Camera focused on marker")
+            else:
+                carb.log_warn("[Shadow Analyzer] Could not find valid camera prim")
+
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] Error focusing camera: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
 
     def _focus_camera_on_scene(self):
         """Position camera for a good overview of the scene."""
@@ -1477,7 +1750,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 # Small delay before terrain
                 await omni.kit.app.get_app().next_update_async()
 
-                self._load_terrain_sync(from_combined_button=True)
+                # TEMPORARILY DISABLED: Terrain loading causes buildings to appear buried/floating
+                # TODO: Fix terrain elevation adjustment or create buildings at terrain elevation
+                # self._load_terrain_sync(from_combined_button=True)
+                carb.log_info("[Shadow Analyzer] ⚠️ Terrain loading temporarily disabled for coordinate testing")
 
                 # Restore the combined button after both operations complete
                 self._restore_map_button()
