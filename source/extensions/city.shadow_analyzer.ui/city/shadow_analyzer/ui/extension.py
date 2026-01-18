@@ -1130,8 +1130,8 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         meters_per_lon_degree = 111000.0 * math.cos(math.radians(self._query_latitude))
 
         # Map to scene coordinates (XZ plane with Y up, same as buildings)
-        z = lat_diff * meters_per_lat_degree    # Z = North/South (latitude)
-        x = lon_diff * meters_per_lon_degree    # X = East/West (longitude)
+        z = lat_diff * meters_per_lat_degree     # Z = North/South (latitude)
+        x = -(lon_diff * meters_per_lon_degree)  # X = East/West (longitude), negated to fix left-right flip
         y = 0.0  # Y = height (ground level)
 
         query_point = Gf.Vec3f(x, y, z)
