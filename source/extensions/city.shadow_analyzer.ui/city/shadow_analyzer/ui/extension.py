@@ -1146,7 +1146,8 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             return
         
         carb.log_error("[Shadow Analyzer] ✓ Query mode IS active, proceeding...")
-        carb.log_error(f"[Shadow Analyzer] ===== QUERYING GPS COORDINATES =====")        carb.log_info(f"[Shadow Analyzer] Query: lat={self._query_latitude}, lon={self._query_longitude}")
+        carb.log_error(f"[Shadow Analyzer] ===== QUERYING GPS COORDINATES =====")
+        carb.log_error(f"[Shadow Analyzer] Query: lat={self._query_latitude}, lon={self._query_longitude}")
 
         stage = omni.usd.get_context().get_stage()
         if not stage:
