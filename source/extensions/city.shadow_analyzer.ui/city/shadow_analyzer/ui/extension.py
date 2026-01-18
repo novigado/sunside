@@ -1373,8 +1373,19 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         carb.log_error(f"[Shadow Analyzer] ✓ Marker created at ({position[0]:.2f}, {raised_position[1]:.2f}, {position[2]:.2f}) - Total: {len(self._query_markers)}")
         carb.log_error(f"[Shadow Analyzer] ==========================================")
 
-        # Automatically focus camera on the marker
-        self._focus_camera_on_marker(raised_position)
+        # Frame the marker in the viewport using Omniverse's built-in command
+        try:
+            carb.log_error("[Shadow Analyzer] Framing marker in viewport...")
+            import omni.kit.commands
+            # Use the frame_prim command to focus viewport on the marker
+            omni.kit.commands.execute('FramePrimsCommand',
+                prim_to_move=marker_path,
+                time_code=omni.usd.get_context().get_time_code_per_second())
+            carb.log_error("[Shadow Analyzer] ✓ Viewport framed on marker")
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] Error framing marker: {e}")
+            # Fallback to manual camera positioning
+            self._focus_camera_on_marker(raised_position)
 
     def _clear_query_markers(self):
         """Clear all query markers from the scene."""
