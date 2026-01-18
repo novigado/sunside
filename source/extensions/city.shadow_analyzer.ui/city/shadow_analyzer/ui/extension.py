@@ -206,16 +206,28 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
                     carb.log_info("[Shadow Analyzer] Creating query button...")
                     
+                    # Create callback with immediate logging
                     def query_button_clicked():
-                        carb.log_info("[Shadow Analyzer] !!!! BUTTON WAS CLICKED !!!!")
-                        self._toggle_query_mode()
+                        try:
+                            carb.log_error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                            carb.log_error("!!!! BUTTON WAS CLICKED !!!!")
+                            carb.log_error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                            self._toggle_query_mode()
+                        except Exception as e:
+                            carb.log_error(f"!!!! EXCEPTION IN BUTTON CALLBACK: {e}")
+                            import traceback
+                            carb.log_error(traceback.format_exc())
+                    
+                    carb.log_info(f"[Shadow Analyzer] Callback function created: {query_button_clicked}")
                     
                     self._query_mode_button = ui.Button("Query Point at GPS Coordinates",
                              clicked_fn=query_button_clicked,
                              height=35,
                              style={"background_color": 0xFF2196F3})
                     
-                    carb.log_info("[Shadow Analyzer] Query button created successfully")
+                    carb.log_info(f"[Shadow Analyzer] Query button created successfully")
+                    carb.log_info(f"[Shadow Analyzer] Button enabled: {self._query_mode_button.enabled}")
+                    carb.log_info(f"[Shadow Analyzer] Button clicked_fn: {self._query_mode_button.set_clicked_fn}")
 
                     ui.Button("Clear Query Markers",
                              clicked_fn=self._clear_query_markers,
@@ -436,7 +448,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
     def _load_buildings_sync(self, from_combined_button=False):
         """Synchronous part of building loading with Nucleus caching.
-        
+
         Args:
             from_combined_button: If True, don't restore individual button (called from combined load)
         """
@@ -865,7 +877,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
     def _load_terrain_sync(self, from_combined_button=False):
         """Synchronous part of terrain loading with Nucleus caching.
-        
+
         Args:
             from_combined_button: If True, don't restore individual button (called from combined load)
         """
@@ -1132,7 +1144,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         if not self._query_mode_active:
             carb.log_info("[Shadow Analyzer] ⚠️ Query mode NOT active, returning early")
             return
-        
+
         carb.log_info("[Shadow Analyzer] ✓ Query mode IS active, proceeding...")
         carb.log_info(f"[Shadow Analyzer] ===== QUERYING GPS COORDINATES =====")
 
@@ -1168,19 +1180,19 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             # Calculate GPS offsets for logging
             lat_offset = self._query_latitude - self._geometry_converter.reference_lat
             lon_offset = self._query_longitude - self._geometry_converter.reference_lon
-            
+
             carb.log_info(f"[Shadow Analyzer] ========== COORDINATE CONVERSION ==========")
             carb.log_info(f"[Shadow Analyzer] Query GPS: ({self._query_latitude:.6f}°, {self._query_longitude:.6f}°)")
             carb.log_info(f"[Shadow Analyzer] Reference GPS: ({self._geometry_converter.reference_lat:.6f}°, {self._geometry_converter.reference_lon:.6f}°)")
             carb.log_info(f"[Shadow Analyzer] GPS offset: {lat_offset:.6f}° lat, {lon_offset:.6f}° lon")
-            
+
             # Calculate distance in meters
             meters_per_lat = 111000.0
             meters_per_lon = 111000.0 * math.cos(math.radians(self._query_latitude))
             lat_distance = abs(lat_offset * meters_per_lat)
             lon_distance = abs(lon_offset * meters_per_lon)
             total_distance = math.sqrt((lat_offset * meters_per_lat)**2 + (lon_offset * meters_per_lon)**2)
-            
+
             carb.log_info(f"[Shadow Analyzer] Distance from reference: {lat_distance:.1f}m N/S, {lon_distance:.1f}m E/W (total: {total_distance:.1f}m)")
             carb.log_info(f"[Shadow Analyzer] Scene coordinates: X={query_point[0]:.2f}m, Y={query_point[1]:.2f}m, Z={query_point[2]:.2f}m")
             carb.log_info(f"[Shadow Analyzer] ==========================================")
@@ -1338,7 +1350,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
         carb.log_info(f"[Shadow Analyzer] ✓ Marker created at ({position[0]:.2f}, {raised_position[1]:.2f}, {position[2]:.2f}) - Total: {len(self._query_markers)}")
         carb.log_info(f"[Shadow Analyzer] ==========================================")
-        
+
         # Automatically focus camera on the marker
         self._focus_camera_on_marker(raised_position)
 
@@ -1428,7 +1440,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
     def _focus_camera_on_marker(self, marker_position: Gf.Vec3d):
         """Focus camera on a specific marker position."""
         carb.log_info(f"[Shadow Analyzer] Focusing camera on marker at ({marker_position[0]:.2f}, {marker_position[1]:.2f}, {marker_position[2]:.2f})")
-        
+
         stage = omni.usd.get_context().get_stage()
         if not stage:
             carb.log_warn("[Shadow Analyzer] No stage available for camera focus")
@@ -1452,24 +1464,24 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     marker_position[1] + 100.0,  # 100m up
                     marker_position[2] + 100.0   # 100m south
                 )
-                
+
                 carb.log_info(f"[Shadow Analyzer] Setting camera position to ({camera_pos[0]:.2f}, {camera_pos[1]:.2f}, {camera_pos[2]:.2f})")
-                
+
                 # Set camera translation
                 xformable = UsdGeom.Xformable(camera_prim)
                 translate_op = None
-                
+
                 # Find or create translate op
                 for op in xformable.GetOrderedXformOps():
                     if op.GetOpType() == UsdGeom.XformOp.TypeTranslate:
                         translate_op = op
                         break
-                
+
                 if translate_op:
                     translate_op.Set(camera_pos)
                 else:
                     xformable.AddTranslateOp().Set(camera_pos)
-                
+
                 # Calculate look-at rotation (camera looks at marker)
                 direction = Gf.Vec3d(
                     marker_position[0] - camera_pos[0],
@@ -1477,31 +1489,31 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     marker_position[2] - camera_pos[2]
                 )
                 direction.Normalize()
-                
+
                 # Simple rotation to look at marker (approximate)
                 import math
                 pitch = math.degrees(math.asin(-direction[1]))  # Look down
                 yaw = math.degrees(math.atan2(direction[0], -direction[2]))  # Look towards marker
-                
+
                 carb.log_info(f"[Shadow Analyzer] Camera rotation: pitch={pitch:.1f}°, yaw={yaw:.1f}°")
-                
+
                 # Set camera rotation
                 rotate_op = None
                 for op in xformable.GetOrderedXformOps():
                     if op.GetOpType() == UsdGeom.XformOp.TypeRotateXYZ:
                         rotate_op = op
                         break
-                
+
                 rotation = Gf.Vec3d(pitch, yaw, 0)
                 if rotate_op:
                     rotate_op.Set(rotation)
                 else:
                     xformable.AddRotateXYZOp().Set(rotation)
-                
+
                 carb.log_info(f"[Shadow Analyzer] ✓ Camera focused on marker")
             else:
                 carb.log_warn("[Shadow Analyzer] Could not find valid camera prim")
-                
+
         except Exception as e:
             carb.log_error(f"[Shadow Analyzer] Error focusing camera: {e}")
             import traceback
