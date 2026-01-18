@@ -1358,10 +1358,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
         # Create sphere at query point (raised 10m above ground for visibility)
         marker = UsdGeom.Sphere.Define(stage, marker_path)
-        marker.CreateRadiusAttr(10.0)  # 10 meter radius - VERY visible
+        marker.CreateRadiusAttr(50.0)  # 50 meter radius - VERY large and visible
 
-        # Set position - raise it 10m above ground level
-        raised_position = Gf.Vec3d(position[0], position[1] + 10.0, position[2])
+        # Set position - raise it 50m above ground level for maximum visibility
+        raised_position = Gf.Vec3d(position[0], position[1] + 50.0, position[2])
 
         carb.log_error(f"[Shadow Analyzer] Raised position: ({raised_position[0]:.2f}, {raised_position[1]:.2f}, {raised_position[2]:.2f})")
 
@@ -1377,9 +1377,9 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             marker.AddTranslateOp().Set(raised_position)
             carb.log_error(f"[Shadow Analyzer] Added new translate op")
 
-        # Start with blue color (will be updated after shadow analysis)
-        # Blue = query location, before we know shadow status
-        color = Gf.Vec3f(0.3, 0.7, 1.0)  # Bright cyan/blue
+        # Start with BRIGHT MAGENTA color for maximum visibility during testing
+        # Will be updated after shadow analysis
+        color = Gf.Vec3f(1.0, 0.0, 1.0)  # Bright magenta/pink - impossible to miss!
 
         # If we already have a result, color accordingly
         if "SUNLIGHT" in self._query_result_label.text:
