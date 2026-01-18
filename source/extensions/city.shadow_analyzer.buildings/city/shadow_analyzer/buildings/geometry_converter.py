@@ -105,7 +105,7 @@ class BuildingGeometryConverter:
         This finds the center of the bounding box of all building coordinates.
 
         Args:
-            buildings: List of building dictionaries with 'nodes' containing GPS coordinates
+            buildings: List of building dictionaries with 'coordinates' containing (lat, lon) tuples
 
         Returns:
             Tuple of (center_lat, center_lon) representing the true center of the data
@@ -120,10 +120,8 @@ class BuildingGeometryConverter:
 
         # Find bounding box of all building coordinates
         for building in buildings:
-            nodes = building.get('nodes', [])
-            for node in nodes:
-                lat = node['lat']
-                lon = node['lon']
+            coordinates = building.get('coordinates', [])
+            for lat, lon in coordinates:
                 min_lat = min(min_lat, lat)
                 max_lat = max(max_lat, lat)
                 min_lon = min(min_lon, lon)

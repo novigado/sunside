@@ -65,7 +65,7 @@ class BuildingLoader:
             # Query buildings AND roads within radius
             radius_meters = radius_km * 1000
             query = f"""
-            [out:json][timeout:25];
+            [out:json][timeout:60];
             (
               way["building"](around:{radius_meters},{latitude},{longitude});
               relation["building"]["type"="multipolygon"](around:{radius_meters},{latitude},{longitude});
@@ -81,7 +81,7 @@ class BuildingLoader:
             response = requests.post(
                 self.overpass_url,
                 data={"data": query},
-                timeout=30
+                timeout=90  # Increased timeout for slow server response
             )
             response.raise_for_status()
 
@@ -102,8 +102,14 @@ class BuildingLoader:
 
             return buildings
 
+        except requests.exceptions.Timeout as e:
+            carb.log_error(f"[BuildingLoader] ⏱️ TIMEOUT: OpenStreetMap Overpass API is not responding")
+            carb.log_error(f"[BuildingLoader] The server may be overloaded. Please try again in a few minutes.")
+            carb.log_error(f"[BuildingLoader] Error details: {e}")
+            return []
         except requests.exceptions.RequestException as e:
-            carb.log_error(f"[BuildingLoader] Error fetching OSM data: {e}")
+            carb.log_error(f"[BuildingLoader] ❌ Network error fetching OSM data: {e}")
+            carb.log_error(f"[BuildingLoader] Check your internet connection or try again later")
             return []
         except Exception as e:
             carb.log_error(f"[BuildingLoader] Error parsing OSM data: {e}")

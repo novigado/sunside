@@ -2,7 +2,7 @@
 
 import carb
 import numpy as np
-from pxr import Gf, Usd, UsdGeom, UsdShade
+from pxr import Gf, Usd, UsdGeom, UsdShade, Sdf
 from typing import Tuple
 import math
 
@@ -132,10 +132,11 @@ class TerrainMeshGenerator:
             shader = UsdShade.Shader.Define(self.stage, f"{material_path}/Shader")
             shader.CreateIdAttr("UsdPreviewSurface")
 
-            # Set earth-tone color (brown/tan)
-            shader.CreateInput("diffuseColor", Gf.Vec3f).Set(Gf.Vec3f(0.6, 0.5, 0.4))
-            shader.CreateInput("roughness", Gf.Float).Set(0.9)
-            shader.CreateInput("metallic", Gf.Float).Set(0.0)
+            # Set earth-tone color (brown/tan) with transparency for debugging
+            shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(0.6, 0.5, 0.4))
+            shader.CreateInput("opacity", Sdf.ValueTypeNames.Float).Set(0.3)  # Make semi-transparent to see buildings
+            shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.9)
+            shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.0)
 
             # Connect shader output
             material.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
