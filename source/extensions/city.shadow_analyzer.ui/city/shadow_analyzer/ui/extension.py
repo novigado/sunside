@@ -580,47 +580,53 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             # Create geometry converter (needs stage)
             geometry_converter = BuildingGeometryConverter(stage)
 
+            # Calculate the ACTUAL center of the building data (use this for ALL scene elements)
+            # This ensures buildings, roads, ground, and markers all share the same reference point
+            if buildings_data:
+                reference_lat, reference_lon = geometry_converter.calculate_buildings_center(buildings_data)
+                carb.log_info(f"[Shadow Analyzer] UI query point: ({self._latitude}, {self._longitude})")
+                carb.log_info(f"[Shadow Analyzer] Calculated scene reference point: ({reference_lat}, {reference_lon})")
+            else:
+                # No buildings, use UI coordinates as fallback
+                reference_lat = self._latitude
+                reference_lon = self._longitude
+                carb.log_info(f"[Shadow Analyzer] No buildings found, using UI coordinates as reference: ({reference_lat}, {reference_lon})")
+
             # Clear existing scene elements
             for path in ["/World/Buildings", "/World/Roads", "/World/Ground"]:
                 prim = stage.GetPrimAtPath(path)
                 if prim:
                     stage.RemovePrim(path)
 
-            # Create ground plane first (underneath everything)
+            # Create ground plane first (underneath everything) - use calculated reference
             carb.log_info(f"[Shadow Analyzer] Creating ground plane...")
             geometry_converter.create_ground_plane(
-                self._latitude,
-                self._longitude,
+                reference_lat,
+                reference_lon,
                 size=1000.0  # 1km x 1km ground
             )
 
-            # Create roads
+            # Create roads - use calculated reference
             if roads_data:
                 carb.log_info(f"[Shadow Analyzer] Creating {len(roads_data)} roads in scene...")
                 geometry_converter.create_roads_from_data(
                     roads_data,
-                    self._latitude,
-                    self._longitude
+                    reference_lat,
+                    reference_lon
                 )
 
-            # Create buildings
+            # Create buildings - use calculated reference
             if buildings_data:
                 carb.log_info(f"[Shadow Analyzer] Creating {len(buildings_data)} buildings in scene...")
-                carb.log_info(f"[Shadow Analyzer] UI reference point: ({self._latitude}, {self._longitude})")
-
-                # Calculate the ACTUAL center of the building data
-                actual_center_lat, actual_center_lon = geometry_converter.calculate_buildings_center(buildings_data)
-                carb.log_info(f"[Shadow Analyzer] Actual building data center: ({actual_center_lat}, {actual_center_lon})")
 
                 # Log first few building IDs to verify different data
                 sample_ids = [b['id'] for b in buildings_data[:5]]
                 carb.log_info(f"[Shadow Analyzer] Sample building IDs: {sample_ids}")
 
-                # Use the ACTUAL center as the reference point, not the UI coordinates
                 geometry_converter.create_buildings_from_data(
                     buildings_data,
-                    actual_center_lat,
-                    actual_center_lon
+                    reference_lat,
+                    reference_lon
                 )
 
             # ========== STEP 3: Save to Nucleus cache ==========
