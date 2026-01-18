@@ -1394,28 +1394,35 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._query_markers.append(marker_path)
 
         carb.log_error(f"[Shadow Analyzer] ✓ Marker created at ({position[0]:.2f}, {raised_position[1]:.2f}, {position[2]:.2f}) - Total: {len(self._query_markers)}")
+        
+        # Validate marker was actually created
+        created_prim = stage.GetPrimAtPath(marker_path)
+        if created_prim and created_prim.IsValid():
+            carb.log_error(f"[Shadow Analyzer] ✓✓ Marker prim exists and is valid")
+            carb.log_error(f"[Shadow Analyzer] Marker type: {created_prim.GetTypeName()}")
+            carb.log_error(f"[Shadow Analyzer] Marker path: {created_prim.GetPath()}")
+            
+            # Check if it's visible
+            imageable = UsdGeom.Imageable(created_prim)
+            if imageable:
+                visibility = imageable.ComputeVisibility()
+                carb.log_error(f"[Shadow Analyzer] Marker visibility: {visibility}")
+            
+            # Check bounding box
+            bbox_cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ['default', 'render'])
+            bbox = bbox_cache.ComputeWorldBound(created_prim)
+            if bbox:
+                bbox_range = bbox.ComputeAlignedRange()
+                carb.log_error(f"[Shadow Analyzer] Marker bounding box: {bbox_range}")
+        else:
+            carb.log_error(f"[Shadow Analyzer] ❌❌ ERROR: Marker prim NOT FOUND or invalid!")
+        
         carb.log_error(f"[Shadow Analyzer] ==========================================")
 
-        # Frame the marker in the viewport using Omniverse's built-in command
-        try:
-            carb.log_error("[Shadow Analyzer] Framing marker in viewport...")
-            # Select the marker prim
-            usd_context = omni.usd.get_context()
-            selection = usd_context.get_selection()
-            selection.clear_selected_prim_paths()
-            selection.set_selected_prim_paths([marker_path], False)
-            
-            # Frame the selected prim (time_code parameter not needed)
-            import omni.kit.commands as commands
-            commands.execute('FramePrimsCommand',
-                prim_to_move=marker_path)
-            carb.log_error("[Shadow Analyzer] ✓ Viewport framed on marker")
-        except Exception as e:
-            carb.log_error(f"[Shadow Analyzer] Error framing marker: {e}")
-            import traceback
-            carb.log_error(traceback.format_exc())
-            # Fallback to manual camera positioning
-            self._focus_camera_on_marker(raised_position)
+        # Focus camera directly on the marker position
+        carb.log_error("[Shadow Analyzer] Positioning camera to look at marker...")
+        self._focus_camera_on_marker(raised_position)
+        carb.log_error("[Shadow Analyzer] ✓ Camera repositioned")
 
     def _clear_query_markers(self):
         """Clear all query markers from the scene."""
