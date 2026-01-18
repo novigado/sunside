@@ -1065,12 +1065,12 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
     def _toggle_query_mode(self):
         """Toggle query mode on/off."""
-        carb.log_info("[Shadow Analyzer] ========== ENTERED _toggle_query_mode ==========")
+        carb.log_error("[Shadow Analyzer] ========== ENTERED _toggle_query_mode ==========")
         try:
-            carb.log_info("[Shadow Analyzer] ========== INSIDE TRY BLOCK ==========")
+            carb.log_error("[Shadow Analyzer] ========== INSIDE TRY BLOCK ==========")
             # Simplified: just perform a single query at viewport center
             self._perform_center_query()
-            carb.log_info("[Shadow Analyzer] ========== AFTER _perform_center_query ==========")
+            carb.log_error("[Shadow Analyzer] ========== AFTER _perform_center_query ==========")
         except Exception as e:
             carb.log_error(f"[Shadow Analyzer] ❌ ERROR in _toggle_query_mode: {e}")
             import traceback
@@ -1078,21 +1078,21 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
     def _perform_center_query(self):
         """Perform a shadow query at the specified GPS coordinates."""
-        carb.log_info("[Shadow Analyzer] ========== ENTERED _perform_center_query ==========")
-        carb.log_info("[Shadow Analyzer] Performing GPS coordinate query")
+        carb.log_error("[Shadow Analyzer] ========== ENTERED _perform_center_query ==========")
+        carb.log_error("[Shadow Analyzer] Performing GPS coordinate query")
 
         # Get query coordinates from UI
         self._query_latitude = self._query_lat_field.model.get_value_as_float()
         self._query_longitude = self._query_lon_field.model.get_value_as_float()
 
-        carb.log_info(f"[Shadow Analyzer] Query coordinates: lat={self._query_latitude}, lon={self._query_longitude}")
+        carb.log_error(f"[Shadow Analyzer] Query coordinates: lat={self._query_latitude}, lon={self._query_longitude}")
 
         # Ensure there's a reference grid for visual context
         self._create_reference_grid()
 
         # Temporarily enable query mode for this operation
         self._query_mode_active = True
-        carb.log_info(f"[Shadow Analyzer] Set _query_mode_active = {self._query_mode_active}")
+        carb.log_error(f"[Shadow Analyzer] Set _query_mode_active = {self._query_mode_active}")
 
 
         # Get viewport API
@@ -1139,16 +1139,14 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
     def _on_viewport_click(self, x: float, y: float):
         """Handle query for specified GPS coordinates."""
-        carb.log_info(f"[Shadow Analyzer] ========== ENTERED _on_viewport_click x={x}, y={y} ==========")
-        carb.log_info(f"[Shadow Analyzer] _query_mode_active = {self._query_mode_active}")
+        carb.log_error(f"[Shadow Analyzer] ========== ENTERED _on_viewport_click x={x}, y={y} ==========")
+        carb.log_error(f"[Shadow Analyzer] _query_mode_active = {self._query_mode_active}")
         if not self._query_mode_active:
-            carb.log_info("[Shadow Analyzer] ⚠️ Query mode NOT active, returning early")
+            carb.log_error("[Shadow Analyzer] ⚠️ Query mode NOT active, returning early")
             return
-
-        carb.log_info("[Shadow Analyzer] ✓ Query mode IS active, proceeding...")
-        carb.log_info(f"[Shadow Analyzer] ===== QUERYING GPS COORDINATES =====")
-
-        carb.log_info(f"[Shadow Analyzer] Query: lat={self._query_latitude}, lon={self._query_longitude}")
+        
+        carb.log_error("[Shadow Analyzer] ✓ Query mode IS active, proceeding...")
+        carb.log_error(f"[Shadow Analyzer] ===== QUERYING GPS COORDINATES =====")        carb.log_info(f"[Shadow Analyzer] Query: lat={self._query_latitude}, lon={self._query_longitude}")
 
         stage = omni.usd.get_context().get_stage()
         if not stage:
