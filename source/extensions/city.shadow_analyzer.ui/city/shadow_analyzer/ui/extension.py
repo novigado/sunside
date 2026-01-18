@@ -44,9 +44,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._longitude = 12.263287434196503
         self._current_time = datetime.now(timezone.utc)
 
-        # Query point location (known location for testing coordinate accuracy)
-        self._query_latitude = 57.74922598698936
-        self._query_longitude = 12.263501675645692
+        # Query point location (at building center for visibility)
+        # Will be updated after buildings load with actual calculated center
+        self._query_latitude = 57.749254  # Approximate Gothenburg city center
+        self._query_longitude = 12.263287
 
         # Scene elements
         self._sun_light_prim_path = "/World/SunLight"
@@ -628,6 +629,14 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     reference_lat,
                     reference_lon
                 )
+
+                # Update query coordinates to match the calculated center for better default visibility
+                # User can still manually enter different coordinates later
+                self._query_latitude = reference_lat
+                self._query_longitude = reference_lon
+                self._lat_field.model.set_value(reference_lat)
+                self._lon_field.model.set_value(reference_lon)
+                carb.log_info(f"[Shadow Analyzer] Updated query coordinates to scene center: ({reference_lat:.6f}, {reference_lon:.6f})")
 
             # ========== STEP 3: Save to Nucleus cache ==========
             if self._nucleus_cache:
