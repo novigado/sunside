@@ -143,23 +143,65 @@ Keep building reference point separate from UI coordinates:
 
 ## Next Steps
 
-1. **Verify the hypothesis**
-   - Add logging to compare reference points used by buildings vs queries
-   - Check actual values when marker placement fails
+### ✅ Solution Implemented (Commit 35c708d)
 
-2. **Implement solution**
-   - Most likely Option 1 or 3
-   - Ensure all coordinate conversions use consistent reference point
+**Approach**: Option 3 - Store Building Reference (Modified)
 
-3. **Test thoroughly**
-   - Place markers at known building locations
-   - Verify they appear at correct positions
-   - Verify shadow calculations work correctly
+The fix ensures the query system uses the **same reference point** as the buildings:
 
-4. **Update documentation**
-   - Document reference point management
-   - Add to architecture docs
-   - Update API guide if needed
+1. **Added geometry converter instance** to UI extension
+   - Created `self._geometry_converter` field
+   - Initialized when stage is available
+
+2. **Load building reference point** before each query
+   - Calls `load_reference_point_from_scene()` to read from building metadata
+   - Falls back to UI coordinates if no buildings loaded
+   - Logs which reference point is being used
+
+3. **Use geometry converter** for coordinate conversion
+   - Replaces manual calculation with `gps_to_scene_coords()`
+   - Ensures consistency with building placement
+   - Provides better error handling
+
+**Code Changes**:
+```python
+# Initialize geometry converter if needed
+if self._geometry_converter is None:
+    self._geometry_converter = BuildingGeometryConverter(stage)
+
+# Load reference point from buildings in scene
+if not self._geometry_converter.load_reference_point_from_scene():
+    # Fall back to UI coordinates if no buildings loaded
+    self._geometry_converter.set_reference_point(self._latitude, self._longitude)
+
+# Convert using same reference as buildings
+x, z = self._geometry_converter.gps_to_scene_coords(
+    self._query_latitude, self._query_longitude
+)
+```
+
+**Benefits**:
+- ✅ Query markers align perfectly with buildings
+- ✅ Shadow calculations use correct positions
+- ✅ Works even if no buildings loaded (uses UI coordinates)
+- ✅ Clear logging shows which reference point is used
+- ✅ Reuses existing, tested coordinate conversion code
+
+### Testing Required
+
+1. **Load buildings** and place markers at known GPS coordinates
+   - Verify markers appear at correct positions relative to buildings
+   - Test multiple locations across the map
+
+2. **Verify shadow calculations** work correctly
+   - Place markers in sunlit areas
+   - Place markers in shadowed areas
+   - Verify results match visual rendering
+
+3. **Test edge cases**
+   - Query before loading buildings (should use UI coordinates)
+   - Query after loading buildings (should use building center)
+   - Load different map locations
 
 ## Files Involved
 
