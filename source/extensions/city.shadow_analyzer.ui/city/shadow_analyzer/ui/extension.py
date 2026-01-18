@@ -204,10 +204,18 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                              clicked_fn=self._create_test_scene,
                              height=30)
 
+                    carb.log_info("[Shadow Analyzer] Creating query button...")
+                    
+                    def query_button_clicked():
+                        carb.log_info("[Shadow Analyzer] !!!! BUTTON WAS CLICKED !!!!")
+                        self._toggle_query_mode()
+                    
                     self._query_mode_button = ui.Button("Query Point at GPS Coordinates",
-                             clicked_fn=self._toggle_query_mode,
+                             clicked_fn=query_button_clicked,
                              height=35,
                              style={"background_color": 0xFF2196F3})
+                    
+                    carb.log_info("[Shadow Analyzer] Query button created successfully")
 
                     ui.Button("Clear Query Markers",
                              clicked_fn=self._clear_query_markers,
@@ -1045,9 +1053,14 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
     def _toggle_query_mode(self):
         """Toggle query mode on/off."""
-        carb.log_info("[Shadow Analyzer] ========== QUERY BUTTON CLICKED ==========")
-        # Simplified: just perform a single query at viewport center
-        self._perform_center_query()
+        try:
+            carb.log_info("[Shadow Analyzer] ========== QUERY BUTTON CLICKED ==========")
+            # Simplified: just perform a single query at viewport center
+            self._perform_center_query()
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] ❌ ERROR in _toggle_query_mode: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
 
     def _perform_center_query(self):
         """Perform a shadow query at the specified GPS coordinates."""
