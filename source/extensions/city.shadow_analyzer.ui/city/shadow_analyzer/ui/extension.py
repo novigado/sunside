@@ -35,6 +35,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._sun_calculator = SunCalculator()
         self._building_loader = BuildingLoader()
         self._terrain_loader = TerrainLoader()
+        self._geometry_converter = None  # Will be initialized when stage is available
         # Note: BuildingGeometryConverter and TerrainMeshGenerator are created when needed (requires stage)
 
         # Default location (Gothenburg, Sweden - 57.749254, 12.263287)
@@ -1117,28 +1118,36 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             carb.log_error("[Shadow Analyzer] No stage available")
             return
 
-        # Convert GPS coordinates to scene coordinates using the SAME system as buildings
-        # This ensures query point is in correct position relative to buildings
+        # Initialize geometry converter if needed
+        if self._geometry_converter is None:
+            self._geometry_converter = BuildingGeometryConverter(stage)
+            carb.log_info("[Shadow Analyzer] Created geometry converter instance")
 
-        # Calculate offset from reference location (where buildings are centered)
-        lat_diff = self._query_latitude - self._latitude
-        lon_diff = self._query_longitude - self._longitude
+        # Try to load reference point from buildings in scene
+        if not self._geometry_converter.load_reference_point_from_scene():
+            carb.log_warn("[Shadow Analyzer] No buildings found in scene - using UI coordinates as reference")
+            # Fall back to UI coordinates if no buildings loaded
+            self._geometry_converter.set_reference_point(self._latitude, self._longitude)
+        else:
+            carb.log_info(f"[Shadow Analyzer] Using building reference point: "
+                         f"({self._geometry_converter.reference_lat}, {self._geometry_converter.reference_lon})")
 
-        # Convert to meters (same as BuildingGeometryConverter)
-        import math
-        meters_per_lat_degree = 111000.0
-        meters_per_lon_degree = 111000.0 * math.cos(math.radians(self._query_latitude))
+        # Convert GPS coordinates to scene coordinates using the SAME reference as buildings
+        try:
+            x, z = self._geometry_converter.gps_to_scene_coords(self._query_latitude, self._query_longitude)
+            y = 0.0  # Y = height (ground level)
+            query_point = Gf.Vec3f(x, y, z)
 
-        # Map to scene coordinates (XZ plane with Y up, same as buildings)
-        z = -(lat_diff * meters_per_lat_degree)    # Z = North/South (latitude), negated to fix north-south flip
-        x = lon_diff * meters_per_lon_degree       # X = East/West (longitude)
-        y = 0.0  # Y = height (ground level)
+            carb.log_info(f"[Shadow Analyzer] Reference point: "
+                         f"({self._geometry_converter.reference_lat:.6f}, {self._geometry_converter.reference_lon:.6f})")
+            carb.log_info(f"[Shadow Analyzer] Query GPS offset from reference: "
+                         f"{self._query_latitude - self._geometry_converter.reference_lat:.6f}° lat, "
+                         f"{self._query_longitude - self._geometry_converter.reference_lon:.6f}° lon")
+            carb.log_info(f"[Shadow Analyzer] Scene position: X={query_point[0]:.2f}m, Y={query_point[1]:.2f}m, Z={query_point[2]:.2f}m")
 
-        query_point = Gf.Vec3f(x, y, z)
-
-        carb.log_info(f"[Shadow Analyzer] GPS offset: {lat_diff:.6f}° lat, {lon_diff:.6f}° lon")
-        carb.log_info(f"[Shadow Analyzer] Distance: {abs(lat_diff * meters_per_lat_degree):.1f}m N/S, {abs(lon_diff * meters_per_lon_degree):.1f}m E/W")
-        carb.log_info(f"[Shadow Analyzer] Scene position: X={query_point[0]:.2f}m, Y={query_point[1]:.2f}m, Z={query_point[2]:.2f}m")
+        except ValueError as e:
+            carb.log_error(f"[Shadow Analyzer] Error converting coordinates: {e}")
+            return
 
         # Create visual marker BEFORE shadow analysis
         self._create_query_marker(query_point)
