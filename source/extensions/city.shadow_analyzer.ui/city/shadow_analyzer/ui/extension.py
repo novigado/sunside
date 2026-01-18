@@ -1,6 +1,7 @@
 """Main UI extension for City Shadow Analyzer."""
 
 import asyncio
+import math
 import omni.ext
 import omni.ui as ui
 import omni.usd
@@ -1124,13 +1125,15 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             carb.log_info("[Shadow Analyzer] Created geometry converter instance")
 
         # Try to load reference point from buildings in scene
-        if not self._geometry_converter.load_reference_point_from_scene():
-            carb.log_warn("[Shadow Analyzer] No buildings found in scene - using UI coordinates as reference")
+        has_buildings = self._geometry_converter.load_reference_point_from_scene()
+        if not has_buildings:
+            carb.log_warn("[Shadow Analyzer] ⚠️ NO BUILDINGS FOUND IN SCENE - using UI coordinates as reference")
+            carb.log_warn(f"[Shadow Analyzer] UI reference: ({self._latitude}, {self._longitude})")
             # Fall back to UI coordinates if no buildings loaded
             self._geometry_converter.set_reference_point(self._latitude, self._longitude)
         else:
-            carb.log_info(f"[Shadow Analyzer] Using building reference point: "
-                         f"({self._geometry_converter.reference_lat}, {self._geometry_converter.reference_lon})")
+            carb.log_info(f"[Shadow Analyzer] ✓ Using building reference point: "
+                         f"({self._geometry_converter.reference_lat:.6f}, {self._geometry_converter.reference_lon:.6f})")
 
         # Convert GPS coordinates to scene coordinates using the SAME reference as buildings
         try:
@@ -1138,15 +1141,28 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             y = 0.0  # Y = height (ground level)
             query_point = Gf.Vec3f(x, y, z)
 
-            carb.log_info(f"[Shadow Analyzer] Reference point: "
-                         f"({self._geometry_converter.reference_lat:.6f}, {self._geometry_converter.reference_lon:.6f})")
-            carb.log_info(f"[Shadow Analyzer] Query GPS offset from reference: "
-                         f"{self._query_latitude - self._geometry_converter.reference_lat:.6f}° lat, "
-                         f"{self._query_longitude - self._geometry_converter.reference_lon:.6f}° lon")
-            carb.log_info(f"[Shadow Analyzer] Scene position: X={query_point[0]:.2f}m, Y={query_point[1]:.2f}m, Z={query_point[2]:.2f}m")
+            # Calculate GPS offsets for logging
+            lat_offset = self._query_latitude - self._geometry_converter.reference_lat
+            lon_offset = self._query_longitude - self._geometry_converter.reference_lon
+            
+            carb.log_info(f"[Shadow Analyzer] ========== COORDINATE CONVERSION ==========")
+            carb.log_info(f"[Shadow Analyzer] Query GPS: ({self._query_latitude:.6f}°, {self._query_longitude:.6f}°)")
+            carb.log_info(f"[Shadow Analyzer] Reference GPS: ({self._geometry_converter.reference_lat:.6f}°, {self._geometry_converter.reference_lon:.6f}°)")
+            carb.log_info(f"[Shadow Analyzer] GPS offset: {lat_offset:.6f}° lat, {lon_offset:.6f}° lon")
+            
+            # Calculate distance in meters
+            meters_per_lat = 111000.0
+            meters_per_lon = 111000.0 * math.cos(math.radians(self._query_latitude))
+            lat_distance = abs(lat_offset * meters_per_lat)
+            lon_distance = abs(lon_offset * meters_per_lon)
+            total_distance = math.sqrt((lat_offset * meters_per_lat)**2 + (lon_offset * meters_per_lon)**2)
+            
+            carb.log_info(f"[Shadow Analyzer] Distance from reference: {lat_distance:.1f}m N/S, {lon_distance:.1f}m E/W (total: {total_distance:.1f}m)")
+            carb.log_info(f"[Shadow Analyzer] Scene coordinates: X={query_point[0]:.2f}m, Y={query_point[1]:.2f}m, Z={query_point[2]:.2f}m")
+            carb.log_info(f"[Shadow Analyzer] ==========================================")
 
         except ValueError as e:
-            carb.log_error(f"[Shadow Analyzer] Error converting coordinates: {e}")
+            carb.log_error(f"[Shadow Analyzer] ❌ Error converting coordinates: {e}")
             return
 
         # Create visual marker BEFORE shadow analysis
@@ -1244,16 +1260,19 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         """Create a visual marker at the queried point."""
         stage = omni.usd.get_context().get_stage()
         if not stage:
-            carb.log_error("[Shadow Analyzer] No stage available for marker creation")
+            carb.log_error("[Shadow Analyzer] ❌ No stage available for marker creation")
             return
 
         marker_index = len(self._query_markers)
         marker_path = f"/World/QueryMarker_{marker_index}"
 
-        carb.log_info(f"[Shadow Analyzer] Creating marker #{marker_index} at {marker_path}")
+        carb.log_info(f"[Shadow Analyzer] ========== CREATING MARKER ==========")
+        carb.log_info(f"[Shadow Analyzer] Marker #{marker_index} at path: {marker_path}")
+        carb.log_info(f"[Shadow Analyzer] Ground position: ({position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f})")
 
         # Check if marker already exists and remove it
         if stage.GetPrimAtPath(marker_path):
+            carb.log_info(f"[Shadow Analyzer] Removing existing marker at {marker_path}")
             stage.RemovePrim(marker_path)
 
         # Create sphere at query point (raised 10m above ground for visibility)
@@ -1263,15 +1282,19 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         # Set position - raise it 10m above ground level
         raised_position = Gf.Vec3d(position[0], position[1] + 10.0, position[2])
 
+        carb.log_info(f"[Shadow Analyzer] Raised position: ({raised_position[0]:.2f}, {raised_position[1]:.2f}, {raised_position[2]:.2f})")
+
         xformable = UsdGeom.Xformable(marker)
         translate_ops = [op for op in xformable.GetOrderedXformOps() if op.GetOpType() == UsdGeom.XformOp.TypeTranslate]
 
         if translate_ops:
             # Use existing translate op
             translate_ops[0].Set(raised_position)
+            carb.log_info(f"[Shadow Analyzer] Updated existing translate op")
         else:
             # Add new translate op
             marker.AddTranslateOp().Set(raised_position)
+            carb.log_info(f"[Shadow Analyzer] Added new translate op")
 
         # Start with blue color (will be updated after shadow analysis)
         # Blue = query location, before we know shadow status
