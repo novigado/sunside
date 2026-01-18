@@ -1344,10 +1344,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
         # Create sphere at query point (raised 10m above ground for visibility)
         marker = UsdGeom.Sphere.Define(stage, marker_path)
-        marker.CreateRadiusAttr(50.0)  # 50 meter radius - VERY large and visible
+        marker.CreateRadiusAttr(10.0)  # 10 meter radius - visible but reasonable size
 
-        # Set position - raise it 50m above ground level for maximum visibility
-        raised_position = Gf.Vec3d(position[0], position[1] + 50.0, position[2])
+        # Set position - raise it 10m above ground level
+        raised_position = Gf.Vec3d(position[0], position[1] + 10.0, position[2])
 
         carb.log_error(f"[Shadow Analyzer] Raised position: ({raised_position[0]:.2f}, {raised_position[1]:.2f}, {raised_position[2]:.2f})")
 
