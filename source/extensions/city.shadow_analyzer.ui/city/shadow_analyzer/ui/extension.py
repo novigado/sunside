@@ -1313,6 +1313,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._query_markers.append(marker_path)
 
         carb.log_info(f"[Shadow Analyzer] ✓ Marker created at ({position[0]:.2f}, {raised_position[1]:.2f}, {position[2]:.2f}) - Total: {len(self._query_markers)}")
+        carb.log_info(f"[Shadow Analyzer] ==========================================")
+        
+        # Automatically focus camera on the marker
+        self._focus_camera_on_marker(raised_position)
 
     def _clear_query_markers(self):
         """Clear all query markers from the scene."""
@@ -1333,6 +1337,151 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._query_result_label.style = {"color": 0xFFFFFFFF, "font_size": 14}
         self._query_position_label.text = ""
         self._query_detail_label.text = ""
+
+    def _focus_camera_on_scene(self):
+        """Position camera for a good overview of the scene."""
+        carb.log_info("[Shadow Analyzer] Focusing camera on scene...")
+
+        stage = omni.usd.get_context().get_stage()
+        if not stage:
+            carb.log_warn("[Shadow Analyzer] No stage available")
+            return
+
+        try:
+            # Get the default perspective camera
+            camera_path = "/OmniverseKit_Persp"
+            camera_prim = stage.GetPrimAtPath(camera_path)
+
+            if not camera_prim or not camera_prim.IsValid():
+                carb.log_warn("[Shadow Analyzer] Default camera not found, trying /World/Camera")
+                camera_path = "/World/Camera"
+                camera_prim = stage.GetPrimAtPath(camera_path)
+
+            if camera_prim and camera_prim.IsValid():
+                from pxr import UsdGeom
+
+                camera_xform = UsdGeom.Xformable(camera_prim)
+
+                # Set camera to a good bird's-eye view position
+                # Position: 200m away on diagonal, 150m up
+                camera_pos = Gf.Vec3d(200, 150, 200)  # X, Y, Z
+
+                # Calculate rotation to look at origin
+                look_at = Gf.Vec3d(0, 0, 0)
+                direction = (look_at - camera_pos).GetNormalized()
+
+                # Calculate pitch and yaw
+                import math
+                xz_length = math.sqrt(direction[0]**2 + direction[2]**2)
+                pitch = math.degrees(math.atan2(-direction[1], xz_length))
+                yaw = math.degrees(math.atan2(direction[0], -direction[2]))
+
+                # Clear and set transforms
+                camera_xform.ClearXformOpOrder()
+
+                # Add translate
+                translate_op = camera_xform.AddTranslateOp()
+                translate_op.Set(camera_pos)
+
+                # Add rotations
+                rotate_y_op = camera_xform.AddRotateYOp()
+                rotate_y_op.Set(yaw)
+
+                rotate_x_op = camera_xform.AddRotateXOp()
+                rotate_x_op.Set(pitch)
+
+                carb.log_info(f"[Shadow Analyzer] Camera positioned at ({camera_pos[0]}, {camera_pos[1]}, {camera_pos[2]})")
+                carb.log_info(f"[Shadow Analyzer] Looking at origin with pitch={pitch:.1f}°, yaw={yaw:.1f}°")
+
+            else:
+                carb.log_warn("[Shadow Analyzer] Could not find valid camera to position")
+
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] Error positioning camera: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
+
+    def _focus_camera_on_marker(self, marker_position: Gf.Vec3d):
+        """Focus camera on a specific marker position."""
+        carb.log_info(f"[Shadow Analyzer] Focusing camera on marker at ({marker_position[0]:.2f}, {marker_position[1]:.2f}, {marker_position[2]:.2f})")
+        
+        stage = omni.usd.get_context().get_stage()
+        if not stage:
+            carb.log_warn("[Shadow Analyzer] No stage available for camera focus")
+            return
+
+        try:
+            # Get the default perspective camera
+            camera_path = "/OmniverseKit_Persp"
+            camera_prim = stage.GetPrimAtPath(camera_path)
+
+            if not camera_prim or not camera_prim.IsValid():
+                carb.log_warn("[Shadow Analyzer] Default camera not found, trying /World/Camera")
+                camera_path = "/World/Camera"
+                camera_prim = stage.GetPrimAtPath(camera_path)
+
+            if camera_prim and camera_prim.IsValid():
+                # Position camera to look at marker from above and to the side
+                # Camera position: offset from marker by 100m back, 100m up, 100m to the side
+                camera_pos = Gf.Vec3d(
+                    marker_position[0] + 100.0,  # 100m east
+                    marker_position[1] + 100.0,  # 100m up
+                    marker_position[2] + 100.0   # 100m south
+                )
+                
+                carb.log_info(f"[Shadow Analyzer] Setting camera position to ({camera_pos[0]:.2f}, {camera_pos[1]:.2f}, {camera_pos[2]:.2f})")
+                
+                # Set camera translation
+                xformable = UsdGeom.Xformable(camera_prim)
+                translate_op = None
+                
+                # Find or create translate op
+                for op in xformable.GetOrderedXformOps():
+                    if op.GetOpType() == UsdGeom.XformOp.TypeTranslate:
+                        translate_op = op
+                        break
+                
+                if translate_op:
+                    translate_op.Set(camera_pos)
+                else:
+                    xformable.AddTranslateOp().Set(camera_pos)
+                
+                # Calculate look-at rotation (camera looks at marker)
+                direction = Gf.Vec3d(
+                    marker_position[0] - camera_pos[0],
+                    marker_position[1] - camera_pos[1],
+                    marker_position[2] - camera_pos[2]
+                )
+                direction.Normalize()
+                
+                # Simple rotation to look at marker (approximate)
+                import math
+                pitch = math.degrees(math.asin(-direction[1]))  # Look down
+                yaw = math.degrees(math.atan2(direction[0], -direction[2]))  # Look towards marker
+                
+                carb.log_info(f"[Shadow Analyzer] Camera rotation: pitch={pitch:.1f}°, yaw={yaw:.1f}°")
+                
+                # Set camera rotation
+                rotate_op = None
+                for op in xformable.GetOrderedXformOps():
+                    if op.GetOpType() == UsdGeom.XformOp.TypeRotateXYZ:
+                        rotate_op = op
+                        break
+                
+                rotation = Gf.Vec3d(pitch, yaw, 0)
+                if rotate_op:
+                    rotate_op.Set(rotation)
+                else:
+                    xformable.AddRotateXYZOp().Set(rotation)
+                
+                carb.log_info(f"[Shadow Analyzer] ✓ Camera focused on marker")
+            else:
+                carb.log_warn("[Shadow Analyzer] Could not find valid camera prim")
+                
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] Error focusing camera: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
 
     def _focus_camera_on_scene(self):
         """Position camera for a good overview of the scene."""
