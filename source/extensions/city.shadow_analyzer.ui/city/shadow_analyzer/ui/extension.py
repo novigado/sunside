@@ -594,12 +594,15 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 carb.log_info(f"[Shadow Analyzer] No buildings found, using UI coordinates as reference: ({reference_lat}, {reference_lon})")
 
             # Clear existing scene elements
-            for path in ["/World/Buildings", "/World/Roads", "/World/Ground"]:
+            for path in ["/World/Buildings", "/World/Roads", "/World/Ground", "/World/Terrain"]:
                 prim = stage.GetPrimAtPath(path)
                 if prim:
                     stage.RemovePrim(path)
 
-            # Create ground plane first (underneath everything) - use calculated reference
+            # Create ground plane ONLY if not loading terrain
+            # (terrain will provide the ground surface with elevation)
+            # Note: Ground plane is always created here because terrain is loaded separately
+            # If you're seeing terrain issues, the ground plane at Y=0 conflicts with elevated terrain
             carb.log_info(f"[Shadow Analyzer] Creating ground plane...")
             geometry_converter.create_ground_plane(
                 reference_lat,

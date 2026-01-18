@@ -132,9 +132,9 @@ class TerrainMeshGenerator:
             shader = UsdShade.Shader.Define(self.stage, f"{material_path}/Shader")
             shader.CreateIdAttr("UsdPreviewSurface")
 
-            # Set earth-tone color (brown/tan) with transparency for debugging
+            # Set earth-tone color (brown/tan)
             shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(0.6, 0.5, 0.4))
-            shader.CreateInput("opacity", Sdf.ValueTypeNames.Float).Set(0.3)  # Make semi-transparent to see buildings
+            # Removed opacity - keep terrain opaque for proper rendering
             shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.9)
             shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.0)
 
