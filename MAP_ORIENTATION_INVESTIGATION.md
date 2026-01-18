@@ -119,13 +119,39 @@ z = lon_diff * meters_per_lon_degree  # lon → z
 ## Action Items
 
 1. ✅ Document the issue
-2. ⬜ Launch application with Gothenburg coordinates
-3. ⬜ Visually inspect map orientation
-4. ⬜ Compare with actual Gothenburg geography
-5. ⬜ Add debug cardinal direction markers
-6. ⬜ Identify specific transformation needed
-7. ⬜ Apply fix
-8. ⬜ Test with multiple locations to verify
+2. ✅ Launch application with Gothenburg coordinates
+3. ✅ Visually inspect map orientation
+4. ✅ Identify problem: Map is flipped left-right (mirrored)
+5. ✅ Apply fix: Negate X coordinate
+6. ⬜ Test in application to verify fix
+7. ⬜ Test with multiple locations to verify
+
+## Solution Applied
+
+**Problem Identified**: Map was mirrored (flipped left-right)
+
+**Root Cause**: The X coordinate (longitude/East-West) was not negated, causing a left-right flip
+
+**Fix Applied** (Commit: ff4666d):
+
+```python
+# BEFORE (incorrect - caused left-right flip):
+x = lon_diff * meters_per_lon_degree  # X = East/West
+
+# AFTER (correct):
+x = -(lon_diff * meters_per_lon_degree)  # X = East/West, negated to fix left-right flip
+```
+
+**Files Modified**:
+1. `geometry_converter.py` - Building coordinate conversion
+2. `terrain_generator.py` - Terrain coordinate conversion  
+3. `extension.py` - GPS query coordinate conversion
+
+**Testing**: Ready to test in application. The map should now display with correct orientation:
+- East → Right (+X direction)
+- West → Left (-X direction)
+- North → Forward (+Z direction)
+- South → Backward (-Z direction)
 
 ## References
 
