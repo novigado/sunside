@@ -581,17 +581,11 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             # Create geometry converter (needs stage)
             geometry_converter = BuildingGeometryConverter(stage)
 
-            # Calculate the ACTUAL center of the building data (use this for ALL scene elements)
-            # This ensures buildings, roads, ground, and markers all share the same reference point
-            if buildings_data:
-                reference_lat, reference_lon = geometry_converter.calculate_buildings_center(buildings_data)
-                carb.log_info(f"[Shadow Analyzer] UI query point: ({self._latitude}, {self._longitude})")
-                carb.log_info(f"[Shadow Analyzer] Calculated scene reference point: ({reference_lat}, {reference_lon})")
-            else:
-                # No buildings, use UI coordinates as fallback
-                reference_lat = self._latitude
-                reference_lon = self._longitude
-                carb.log_info(f"[Shadow Analyzer] No buildings found, using UI coordinates as reference: ({reference_lat}, {reference_lon})")
+            # Use UI coordinates as the reference point (what user requested)
+            # The building data is centered around this query point
+            reference_lat = self._latitude
+            reference_lon = self._longitude
+            carb.log_info(f"[Shadow Analyzer] Using UI coordinates as reference point: ({reference_lat}, {reference_lon})")
 
             # Clear existing scene elements
             for path in ["/World/Buildings", "/World/Roads", "/World/Ground", "/World/Terrain"]:
@@ -619,7 +613,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     reference_lon
                 )
 
-            # Create buildings - use calculated reference
+            # Create buildings - use UI reference
             if buildings_data:
                 carb.log_info(f"[Shadow Analyzer] Creating {len(buildings_data)} buildings in scene...")
 
@@ -632,14 +626,6 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     reference_lat,
                     reference_lon
                 )
-
-                # Update query coordinates to match the calculated center for better default visibility
-                # User can still manually enter different coordinates later
-                self._query_latitude = reference_lat
-                self._query_longitude = reference_lon
-                self._lat_field.model.set_value(reference_lat)
-                self._lon_field.model.set_value(reference_lon)
-                carb.log_info(f"[Shadow Analyzer] Updated query coordinates to scene center: ({reference_lat:.6f}, {reference_lon:.6f})")
 
             # ========== STEP 3: Save to Nucleus cache ==========
             if self._nucleus_cache:
