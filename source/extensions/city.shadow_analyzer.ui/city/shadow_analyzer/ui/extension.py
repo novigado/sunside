@@ -1155,20 +1155,32 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             return
 
         # Initialize geometry converter if needed
+        carb.log_error("[Shadow Analyzer] About to check geometry converter...")
         if self._geometry_converter is None:
             self._geometry_converter = BuildingGeometryConverter(stage)
-            carb.log_info("[Shadow Analyzer] Created geometry converter instance")
+            carb.log_error("[Shadow Analyzer] Created NEW geometry converter instance")
+        else:
+            carb.log_error("[Shadow Analyzer] Using EXISTING geometry converter instance")
 
         # Try to load reference point from buildings in scene
-        has_buildings = self._geometry_converter.load_reference_point_from_scene()
-        if not has_buildings:
-            carb.log_warn("[Shadow Analyzer] ⚠️ NO BUILDINGS FOUND IN SCENE - using UI coordinates as reference")
-            carb.log_warn(f"[Shadow Analyzer] UI reference: ({self._latitude}, {self._longitude})")
-            # Fall back to UI coordinates if no buildings loaded
-            self._geometry_converter.set_reference_point(self._latitude, self._longitude)
-        else:
-            carb.log_info(f"[Shadow Analyzer] ✓ Using building reference point: "
-                         f"({self._geometry_converter.reference_lat:.6f}, {self._geometry_converter.reference_lon:.6f})")
+        try:
+            carb.log_error("[Shadow Analyzer] About to call load_reference_point_from_scene()...")
+            has_buildings = self._geometry_converter.load_reference_point_from_scene()
+            carb.log_error(f"[Shadow Analyzer] load_reference_point_from_scene() returned: {has_buildings}")
+            
+            if not has_buildings:
+                carb.log_error("[Shadow Analyzer] ⚠️ NO BUILDINGS FOUND IN SCENE - using UI coordinates as reference")
+                carb.log_warn(f"[Shadow Analyzer] UI reference: ({self._latitude}, {self._longitude})")
+                # Fall back to UI coordinates if no buildings loaded
+                self._geometry_converter.set_reference_point(self._latitude, self._longitude)
+            else:
+                carb.log_error(f"[Shadow Analyzer] ✓ Using building reference point: "
+                             f"({self._geometry_converter.reference_lat:.6f}, {self._geometry_converter.reference_lon:.6f})")
+        except Exception as e:
+            carb.log_error(f"[Shadow Analyzer] ❌❌❌ EXCEPTION in load_reference_point section: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
+            return
 
         # Convert GPS coordinates to scene coordinates using the SAME reference as buildings
         try:
