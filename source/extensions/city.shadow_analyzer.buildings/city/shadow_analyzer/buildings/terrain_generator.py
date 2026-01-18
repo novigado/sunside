@@ -76,7 +76,7 @@ class TerrainMeshGenerator:
                     lat_diff = lat - reference_lat
                     lon_diff = lon - reference_lon
 
-                    x = -(lon_diff * meters_per_lon_degree)  # X = East/West, negated to fix left-right flip
+                    x = lon_diff * meters_per_lon_degree     # X = East/West
                     z = -(lat_diff * meters_per_lat_degree)  # Z = North/South, negated to fix north-south flip
                     y = elevation_grid[i, j]                 # Y = height
 

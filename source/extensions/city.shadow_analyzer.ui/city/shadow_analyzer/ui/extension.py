@@ -1131,7 +1131,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
         # Map to scene coordinates (XZ plane with Y up, same as buildings)
         z = -(lat_diff * meters_per_lat_degree)    # Z = North/South (latitude), negated to fix north-south flip
-        x = -(lon_diff * meters_per_lon_degree)    # X = East/West (longitude), negated to fix left-right flip
+        x = lon_diff * meters_per_lon_degree       # X = East/West (longitude)
         y = 0.0  # Y = height (ground level)
 
         query_point = Gf.Vec3f(x, y, z)
