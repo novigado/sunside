@@ -1757,7 +1757,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 # Small delay before terrain
                 await omni.kit.app.get_app().next_update_async()
 
-                self._load_terrain_sync(from_combined_button=True)
+                # TEMPORARILY DISABLED: Terrain loading causes buildings to appear buried/floating
+                # TODO: Fix terrain elevation adjustment or create buildings at terrain elevation
+                # self._load_terrain_sync(from_combined_button=True)
+                carb.log_info("[Shadow Analyzer] ⚠️ Terrain loading temporarily disabled for coordinate testing")
 
                 # Restore the combined button after both operations complete
                 self._restore_map_button()
