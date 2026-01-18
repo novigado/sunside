@@ -1045,11 +1045,13 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
     def _toggle_query_mode(self):
         """Toggle query mode on/off."""
+        carb.log_info("[Shadow Analyzer] ========== QUERY BUTTON CLICKED ==========")
         # Simplified: just perform a single query at viewport center
         self._perform_center_query()
 
     def _perform_center_query(self):
         """Perform a shadow query at the specified GPS coordinates."""
+        carb.log_info("[Shadow Analyzer] _perform_center_query() called")
         carb.log_info("[Shadow Analyzer] Performing GPS coordinate query")
 
         # Get query coordinates from UI
