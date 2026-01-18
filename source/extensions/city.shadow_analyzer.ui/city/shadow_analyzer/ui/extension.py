@@ -11,6 +11,7 @@ import carb
 import carb.input
 import carb.events
 from datetime import datetime, timezone
+from typing import Tuple
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdLux
 from city.shadow_analyzer.sun import SunCalculator
 from city.shadow_analyzer.buildings import (
