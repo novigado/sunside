@@ -1376,14 +1376,22 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         # Frame the marker in the viewport using Omniverse's built-in command
         try:
             carb.log_error("[Shadow Analyzer] Framing marker in viewport...")
-            import omni.kit.commands
-            # Use the frame_prim command to focus viewport on the marker
-            omni.kit.commands.execute('FramePrimsCommand',
+            # Select the marker prim
+            usd_context = omni.usd.get_context()
+            selection = usd_context.get_selection()
+            selection.clear_selected_prim_paths()
+            selection.set_selected_prim_paths([marker_path], False)
+            
+            # Frame the selected prim
+            import omni.kit.commands as commands
+            commands.execute('FramePrimsCommand',
                 prim_to_move=marker_path,
-                time_code=omni.usd.get_context().get_time_code_per_second())
+                time_code=usd_context.get_time_code_per_second())
             carb.log_error("[Shadow Analyzer] ✓ Viewport framed on marker")
         except Exception as e:
             carb.log_error(f"[Shadow Analyzer] Error framing marker: {e}")
+            import traceback
+            carb.log_error(traceback.format_exc())
             # Fallback to manual camera positioning
             self._focus_camera_on_marker(raised_position)
 
