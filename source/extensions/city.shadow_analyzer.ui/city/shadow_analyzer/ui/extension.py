@@ -44,8 +44,8 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._longitude = 12.263287434196503
         self._current_time = datetime.now(timezone.utc)
 
-        # Query point location (default same as observer location)
-        self._query_latitude = 57.749253539442606
+        # Query point location (~50m south of center for visibility)
+        self._query_latitude = 57.74880  # ~50m south
         self._query_longitude = 12.263287434196503
 
         # Scene elements
