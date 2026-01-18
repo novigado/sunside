@@ -44,9 +44,9 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         self._longitude = 12.263287434196503
         self._current_time = datetime.now(timezone.utc)
 
-        # Query point location (~50m south of center for visibility)
-        self._query_latitude = 57.74880  # ~50m south
-        self._query_longitude = 12.263287434196503
+        # Query point location (known location for testing coordinate accuracy)
+        self._query_latitude = 57.74922598698936
+        self._query_longitude = 12.263501675645692
 
         # Scene elements
         self._sun_light_prim_path = "/World/SunLight"
@@ -606,16 +606,21 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             # Create buildings
             if buildings_data:
                 carb.log_info(f"[Shadow Analyzer] Creating {len(buildings_data)} buildings in scene...")
-                carb.log_info(f"[Shadow Analyzer] Reference point: ({self._latitude}, {self._longitude})")
+                carb.log_info(f"[Shadow Analyzer] UI reference point: ({self._latitude}, {self._longitude})")
+
+                # Calculate the ACTUAL center of the building data
+                actual_center_lat, actual_center_lon = geometry_converter.calculate_buildings_center(buildings_data)
+                carb.log_info(f"[Shadow Analyzer] Actual building data center: ({actual_center_lat}, {actual_center_lon})")
 
                 # Log first few building IDs to verify different data
                 sample_ids = [b['id'] for b in buildings_data[:5]]
                 carb.log_info(f"[Shadow Analyzer] Sample building IDs: {sample_ids}")
 
+                # Use the ACTUAL center as the reference point, not the UI coordinates
                 geometry_converter.create_buildings_from_data(
                     buildings_data,
-                    self._latitude,
-                    self._longitude
+                    actual_center_lat,
+                    actual_center_lon
                 )
 
             # ========== STEP 3: Save to Nucleus cache ==========
@@ -1382,11 +1387,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             selection.clear_selected_prim_paths()
             selection.set_selected_prim_paths([marker_path], False)
             
-            # Frame the selected prim
+            # Frame the selected prim (time_code parameter not needed)
             import omni.kit.commands as commands
             commands.execute('FramePrimsCommand',
-                prim_to_move=marker_path,
-                time_code=usd_context.get_time_code_per_second())
+                prim_to_move=marker_path)
             carb.log_error("[Shadow Analyzer] ✓ Viewport framed on marker")
         except Exception as e:
             carb.log_error(f"[Shadow Analyzer] Error framing marker: {e}")

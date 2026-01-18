@@ -42,7 +42,7 @@ x = lon_diff * meters_per_lon_degree  # Longitude -> X (east-west)
    # Building at 57.75°N, 12.26°E should be at:
    lat_diff = 57.75 - 57.749254 = +0.000746° (slightly north)
    lon_diff = 12.26 - 12.263287 = -0.003287° (slightly west)
-   
+
    # Should give:
    z = +0.000746 * 111000 = +82.8m (positive Z = north) ✓
    x = -0.003287 * 111000 * cos(57.749°) = -193.6m (negative X = west) ✓
@@ -67,7 +67,7 @@ Add visible markers at cardinal directions to verify orientation:
 # North marker (positive Z)
 create_marker("/World/Debug/North", position=(0, 10, 100), color="blue")
 
-# South marker (negative Z) 
+# South marker (negative Z)
 create_marker("/World/Debug/South", position=(0, 10, -100), color="yellow")
 
 # East marker (positive X)
@@ -96,7 +96,7 @@ x = -(lon_diff * meters_per_lon_degree)  # Note the negative sign
 ### If Map is Mirrored (Flipped Front-Back)
 
 ```python
-# Flip Z coordinate  
+# Flip Z coordinate
 z = -(lat_diff * meters_per_lat_degree)  # Note the negative sign
 ```
 
@@ -144,7 +144,7 @@ x = -(lon_diff * meters_per_lon_degree)  # X = East/West, negated to fix left-ri
 
 **Files Modified**:
 1. `geometry_converter.py` - Building coordinate conversion
-2. `terrain_generator.py` - Terrain coordinate conversion  
+2. `terrain_generator.py` - Terrain coordinate conversion
 3. `extension.py` - GPS query coordinate conversion
 
 **Testing**: Ready to test in application. The map should now display with correct orientation:

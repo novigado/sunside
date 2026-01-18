@@ -27,11 +27,11 @@ The issue was in the `_load_map_with_terrain()` function in `extension.py`:
 async def _do_load():
     self._load_map_button.enabled = False
     self._load_map_button.text = "⏳ Loading Map..."
-    
+
     # These functions restored their OWN buttons, not the combined button!
     self._load_buildings_sync()
     self._load_terrain_sync()
-    
+
     # ❌ MISSING: No call to restore _load_map_button
 ```
 
@@ -51,7 +51,7 @@ def _load_buildings_sync(self, from_combined_button=False):
 def _load_terrain_sync(self, from_combined_button=False):
     """
     Args:
-        from_combined_button: If True, don't restore individual button  
+        from_combined_button: If True, don't restore individual button
     """
 ```
 
@@ -62,15 +62,15 @@ async def _do_load():
     # Disable combined button
     self._load_map_button.enabled = False
     self._load_map_button.text = "⏳ Loading Map..."
-    
+
     try:
         # Pass from_combined_button=True to suppress individual restoration
         self._load_buildings_sync(from_combined_button=True)
         self._load_terrain_sync(from_combined_button=True)
-        
+
         # ✅ FIXED: Restore the combined button
         self._restore_map_button()
-        
+
     except Exception as e:
         # Restore even on error
         self._restore_map_button()
@@ -122,23 +122,23 @@ if hasattr(self, '_load_buildings_button') and not from_combined_button:
 ### Test Case 4: Individual Buttons Still Work
 1. Click "Load Buildings from OpenStreetMap" individually
 2. **Verify**: That button restores correctly
-3. Click "Load Terrain Elevation Data" individually  
+3. Click "Load Terrain Elevation Data" individually
 4. **Verify**: That button restores correctly
 
 ## Expected Behavior After Fix
 
-✅ Combined button disables during load  
-✅ Combined button shows loading state  
-✅ Combined button restores after success  
-✅ Combined button restores after error  
-✅ Button is re-enabled for subsequent loads  
-✅ Individual buttons still work independently  
+✅ Combined button disables during load
+✅ Combined button shows loading state
+✅ Combined button restores after success
+✅ Combined button restores after error
+✅ Button is re-enabled for subsequent loads
+✅ Individual buttons still work independently
 
 ## Technical Details
 
-**Branch**: `bugfix/loading-map-button-stuck`  
-**Commit**: `54226d0`  
-**Lines Changed**: 37 insertions, 17 deletions  
+**Branch**: `bugfix/loading-map-button-stuck`
+**Commit**: `54226d0`
+**Lines Changed**: 37 insertions, 17 deletions
 
 **Key Changes**:
 - Added `from_combined_button` parameter to 2 functions
