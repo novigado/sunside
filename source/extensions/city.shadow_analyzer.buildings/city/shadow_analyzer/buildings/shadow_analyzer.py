@@ -61,6 +61,12 @@ class ShadowAnalyzer:
         if hit_result:
             hit_distance, hit_path = hit_result
             object_type = "terrain" if hit_path == "/World/Terrain" else "building"
+            
+            # Ignore very close terrain hits (within 5m) - likely the local terrain under the query point
+            if hit_path == "/World/Terrain" and hit_distance < 5.0:
+                carb.log_info(f"[ShadowAnalyzer] Ignoring close terrain hit at {hit_distance:.2f}m (local terrain) - SUNLIGHT")
+                return False, None
+            
             carb.log_info(f"[ShadowAnalyzer] Ray hit {object_type} at {hit_path} at distance {hit_distance:.2f}m - SHADOW")
             return True, hit_path
         else:
