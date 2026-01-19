@@ -47,7 +47,9 @@ class NucleusManager:
         # Set up token-based authentication
         self._setup_authentication()
 
+        # Check connection during initialization
         self._connected = False
+        self.check_connection()
 
     def _setup_authentication(self):
         """Set up authentication for Nucleus connection."""
