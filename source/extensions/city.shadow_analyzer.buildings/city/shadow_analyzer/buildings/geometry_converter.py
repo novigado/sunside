@@ -19,6 +19,17 @@ class BuildingGeometryConverter:
         self.stage = stage
         self.reference_lat = None
         self.reference_lon = None
+        self._terrain_generator = None  # Optional terrain generator for elevation queries
+
+    def set_terrain_generator(self, terrain_generator):
+        """
+        Set the terrain generator for elevation queries.
+        
+        Args:
+            terrain_generator: TerrainMeshGenerator instance with elevation data
+        """
+        self._terrain_generator = terrain_generator
+        carb.log_info("[BuildingConverter] Terrain generator set for elevation queries")
 
     def set_reference_point(self, latitude: float, longitude: float):
         """
@@ -195,23 +206,48 @@ class BuildingGeometryConverter:
                 x, z = self.gps_to_scene_coords(lat, lon)
                 scene_coords.append((x, z))
 
-            # Calculate average terrain elevation at building location
-            total_elevation = 0.0
+            # Query terrain elevation for EACH vertex independently
+            # This allows buildings to follow terrain contours naturally
+            vertex_elevations = []
+            has_valid_elevation = False
+            fallback_elev = 0.0
+            
             for x, z in scene_coords:
-                total_elevation += self.get_terrain_elevation_at_point(x, z)
-            base_elevation = total_elevation / len(scene_coords)
+                elev = self.get_terrain_elevation_at_point(x, z)
+                if elev > 0.01:  # Consider as valid if > 1cm (not just default 0.0)
+                    has_valid_elevation = True
+                vertex_elevations.append(elev)
+            
+            # If no valid elevations found (building outside terrain grid), use terrain average as fallback
+            if not has_valid_elevation and self._terrain_generator:
+                fallback_elev = self._terrain_generator.get_average_elevation()
+                carb.log_warn(f"[BuildingConverter] Building {building_id}: Outside terrain grid, using average elevation {fallback_elev:.1f}m")
+                vertex_elevations = [fallback_elev] * len(scene_coords)
+            
+            # Log elevation info for debugging
+            if self._terrain_generator and len(vertex_elevations) > 0:
+                min_elev = min(vertex_elevations)
+                max_elev = max(vertex_elevations)
+                avg_elev = sum(vertex_elevations) / len(vertex_elevations)
+                status = "VALID" if has_valid_elevation else "FALLBACK"
+                carb.log_info(f"[BuildingConverter] Building {building_id}: terrain_gen=YES ({status}), elevations=[{min_elev:.1f}-{max_elev:.1f}]m avg={avg_elev:.1f}m")
 
             # Create extruded polygon (building as box with polygon base)
             mesh = UsdGeom.Mesh.Define(self.stage, building_path)
 
-            # Build vertices: bottom + top faces
-            # USD uses Z-up coordinate system, so buildings lie in XZ plane with Y as height
-            # Buildings sit on terrain at base_elevation
+            # Build vertices: bottom face follows terrain, top face at terrain + height
+            # Each vertex uses its own terrain elevation for natural slope following
             points = []
-            for x, z in scene_coords:
-                points.append(Gf.Vec3f(x, base_elevation, z))  # Bottom face at terrain elevation
-            for x, z in scene_coords:
-                points.append(Gf.Vec3f(x, base_elevation + height, z))  # Top face (base + height)
+            
+            # Bottom face - each vertex at its terrain elevation + small offset
+            for i, (x, z) in enumerate(scene_coords):
+                base_y = vertex_elevations[i] + 0.1  # 10cm above terrain to avoid z-fighting
+                points.append(Gf.Vec3f(x, base_y, z))
+            
+            # Top face - each vertex at its terrain elevation + building height
+            for i, (x, z) in enumerate(scene_coords):
+                top_y = vertex_elevations[i] + height + 0.1  # Maintain offset at top
+                points.append(Gf.Vec3f(x, top_y, z))
 
             mesh.CreatePointsAttr(points)
 
@@ -377,7 +413,12 @@ class BuildingGeometryConverter:
 
                 # Get terrain elevation at this point
                 terrain_elev = self.get_terrain_elevation_at_point(x, z)
-                road_y = terrain_elev + 0.05  # Slightly above terrain to avoid z-fighting
+                
+                # If elevation is 0 (outside terrain grid), use average elevation as fallback
+                if terrain_elev < 0.01 and self._terrain_generator:
+                    terrain_elev = self._terrain_generator.get_average_elevation()
+                
+                road_y = terrain_elev + 3.0  # Elevated 3m above terrain to ensure visibility above mesh surface
 
                 # Create two vertices (left and right edges of road)
                 points.append(Gf.Vec3f(x - perp_x * half_width, road_y, z - perp_z * half_width))  # Left edge
@@ -419,14 +460,15 @@ class BuildingGeometryConverter:
 
     def _get_road_color(self, road_type: str) -> Gf.Vec3f:
         """Get color for road based on type."""
+        # Use bright yellow/white colors for elevated roads to ensure visibility
         color_map = {
-            "motorway": Gf.Vec3f(0.9, 0.7, 0.4),      # Orange
-            "trunk": Gf.Vec3f(0.9, 0.8, 0.5),         # Light orange
-            "primary": Gf.Vec3f(0.8, 0.8, 0.6),       # Yellow-gray
-            "secondary": Gf.Vec3f(0.7, 0.7, 0.7),     # Light gray
-            "tertiary": Gf.Vec3f(0.6, 0.6, 0.6),      # Gray
-            "residential": Gf.Vec3f(0.5, 0.5, 0.5),   # Dark gray
-            "service": Gf.Vec3f(0.4, 0.4, 0.4),       # Darker gray
+            "motorway": Gf.Vec3f(1.0, 0.9, 0.3),      # Bright yellow (major highway)
+            "trunk": Gf.Vec3f(0.95, 0.85, 0.4),       # Yellow-orange
+            "primary": Gf.Vec3f(0.9, 0.8, 0.5),       # Light yellow
+            "secondary": Gf.Vec3f(0.85, 0.75, 0.55),  # Pale yellow
+            "tertiary": Gf.Vec3f(0.8, 0.7, 0.6),      # Cream
+            "residential": Gf.Vec3f(0.75, 0.7, 0.65), # Light cream
+            "service": Gf.Vec3f(0.7, 0.65, 0.6),      # Beige
             "pedestrian": Gf.Vec3f(0.7, 0.6, 0.5),    # Beige
             "footway": Gf.Vec3f(0.6, 0.5, 0.4),       # Brown
             "path": Gf.Vec3f(0.5, 0.4, 0.3),          # Dark brown
@@ -516,7 +558,8 @@ class BuildingGeometryConverter:
 
     def get_terrain_elevation_at_point(self, x: float, z: float) -> float:
         """
-        Get terrain elevation at a specific scene coordinate by querying the terrain mesh.
+        Get terrain elevation at a specific scene coordinate.
+        Uses terrain generator grid data if available (fast), otherwise queries mesh (slower).
 
         Args:
             x: X coordinate in scene space
@@ -525,6 +568,14 @@ class BuildingGeometryConverter:
         Returns:
             Elevation (Y value) at that point, or 0.0 if no terrain exists
         """
+        # Prefer terrain generator grid-based query (faster and more accurate)
+        if self._terrain_generator:
+            elevation = self._terrain_generator.get_elevation_at_scene_coords(x, z)
+            # carb.log_info(f"[BuildingConverter] Grid query at ({x:.1f}, {z:.1f}): {elevation:.1f}m")
+            return elevation
+        
+        # Fallback to mesh-based query (slower, for backwards compatibility)
+        carb.log_warn(f"[BuildingConverter] No terrain generator - falling back to mesh query at ({x:.1f}, {z:.1f})")
         terrain_prim = self.stage.GetPrimAtPath("/World/Terrain")
         if not terrain_prim or not terrain_prim.IsA(UsdGeom.Mesh):
             return 0.0
