@@ -1,4 +1,4 @@
-# Basic C++ Extension Template
+﻿# Basic C++ Extension Template
 
 <p align="center">
   <img src="../../../readme-assets/cpp_logo.png" width="30%" />

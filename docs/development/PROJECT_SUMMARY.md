@@ -1,4 +1,4 @@
-# City Shadow Analyzer - Project Summary
+﻿# City Shadow Analyzer - Project Summary
 
 ## 🎉 Congratulations!
 

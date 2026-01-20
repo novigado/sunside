@@ -1,4 +1,4 @@
-# City Shadow Analyzer - System Architecture
+﻿# City Shadow Analyzer - System Architecture
 
 **Last Updated**: January 17, 2026
 **Version**: 0.2.0

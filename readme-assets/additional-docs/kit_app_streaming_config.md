@@ -1,4 +1,4 @@
-# Kit Application Streaming
+﻿# Kit Application Streaming
 
 ## Overview
 

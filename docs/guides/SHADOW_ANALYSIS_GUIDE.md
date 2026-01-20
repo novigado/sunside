@@ -1,4 +1,4 @@
-# City Shadow Analyzer - Quick Start Guide
+﻿# City Shadow Analyzer - Quick Start Guide
 
 ## Overview
 

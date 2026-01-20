@@ -1,4 +1,4 @@
-# Kit Base Editor App Template
+﻿# Kit Base Editor App Template
 
 ![Kit Base Editor Image](../../../readme-assets/kit_base_editor.png)
 

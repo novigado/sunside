@@ -1,1 +1,1 @@
-# {{ extension_display_name }} [{{ extension_name }}]
+﻿# {{ extension_display_name }} [{{ extension_name }}]

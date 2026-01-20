@@ -1,4 +1,4 @@
-# City Shadow Analyzer - Sun Position Extension
+﻿# City Shadow Analyzer - Sun Position Extension
 
 This extension provides sun position calculation capabilities for the City Shadow Analyzer application.
 

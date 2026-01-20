@@ -1,4 +1,4 @@
-# Cleanup Branch Summary 🧹
+﻿# Cleanup Branch Summary 🧹
 
 **Branch**: `cleanup/documentation-and-unused-code`
 **Created**: January 17, 2026

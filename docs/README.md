@@ -1,4 +1,4 @@
-# City Shadow Analyzer Documentation 📚
+﻿# City Shadow Analyzer Documentation 📚
 
 Welcome to the City Shadow Analyzer documentation! This directory contains all guides, tutorials, and technical documentation for the project.
 

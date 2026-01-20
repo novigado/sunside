@@ -1,4 +1,4 @@
-# Templates Directory 📋
+﻿# Templates Directory 📋
 
 This directory contains NVIDIA Omniverse Kit templates used for creating new applications and extensions.
 

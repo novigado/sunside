@@ -1,4 +1,4 @@
-# Coordinate System Reference Point Investigation
+﻿# Coordinate System Reference Point Investigation
 
 ## Issue Description
 

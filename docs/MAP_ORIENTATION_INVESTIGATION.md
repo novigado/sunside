@@ -1,4 +1,4 @@
-# Map Orientation Investigation
+﻿# Map Orientation Investigation
 
 ## Issue Report
 

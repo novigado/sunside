@@ -1,4 +1,4 @@
-# Bug Fix: Terrain API 504 Timeout
+﻿# Bug Fix: Terrain API 504 Timeout
 
 **Branch:** `bugfix/terrain-api-timeout`
 **Date:** 2025

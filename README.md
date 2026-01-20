@@ -1,4 +1,4 @@
-# City Shadow Analyzer 🌆☀️
+﻿# City Shadow Analyzer 🌆☀️
 
 <p align="center">
   <strong>GPU-Accelerated Solar Analysis for Urban Environments</strong><br>

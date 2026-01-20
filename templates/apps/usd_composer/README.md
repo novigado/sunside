@@ -1,4 +1,4 @@
-# USD Composer App Template
+﻿# USD Composer App Template
 
 ![USD Composer Hero Image](../../../readme-assets/usd_composer.jpg)
 

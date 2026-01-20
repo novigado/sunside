@@ -1,4 +1,4 @@
-# Nucleus Required Ports
+﻿# Nucleus Required Ports
 
 Based on your `nucleus-stack-no-ssl.yml` configuration, here are all the ports used by Nucleus:
 

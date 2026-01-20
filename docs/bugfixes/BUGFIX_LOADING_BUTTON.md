@@ -1,4 +1,4 @@
-# Bugfix: Loading Map Button Stuck in "Loading" State
+﻿# Bugfix: Loading Map Button Stuck in "Loading" State
 
 ## Issue Description
 

@@ -1,4 +1,4 @@
-# Nucleus Cache Validation Guide
+﻿# Nucleus Cache Validation Guide
 
 This guide shows you how to validate that building and terrain data is being stored in your Nucleus server.
 

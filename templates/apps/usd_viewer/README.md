@@ -1,4 +1,4 @@
-# USD Viewer App Template
+﻿# USD Viewer App Template
 
 ![USD Viewer Hero Image](../../../readme-assets/usd_viewer.jpg)
 

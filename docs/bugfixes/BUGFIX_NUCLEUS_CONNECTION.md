@@ -1,4 +1,4 @@
-# Nucleus Connection Bug Fix
+﻿# Nucleus Connection Bug Fix
 
 **Branch**: `bugfix/nucleus-connection-not-initialized`
 **Date**: January 19, 2026

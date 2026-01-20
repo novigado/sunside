@@ -1,4 +1,4 @@
-# Nucleus Testing Guide
+﻿# Nucleus Testing Guide
 
 This guide explains how to test if Nucleus is running and verify the integration works.
 

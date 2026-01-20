@@ -1,4 +1,4 @@
-# Project Cleanup Plan 🧹
+﻿# Project Cleanup Plan 🧹
 
 **Branch**: `cleanup/documentation-and-unused-code`
 **Date**: January 17, 2026

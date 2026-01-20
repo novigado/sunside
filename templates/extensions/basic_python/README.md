@@ -1,4 +1,4 @@
-# Basic Python Extension Template
+﻿# Basic Python Extension Template
 
 <p align="center">
   <img src="../../../readme-assets/python-logo-only.png" width="30%" />

@@ -1,4 +1,4 @@
-# Map Loading User Feedback Improvements
+﻿# Map Loading User Feedback Improvements
 
 ## Overview
 This document describes the improvements made to provide better user feedback when loading maps from OpenStreetMap.

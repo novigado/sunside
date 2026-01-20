@@ -1,4 +1,4 @@
-# Terrain Elevation Integration Plan
+﻿# Terrain Elevation Integration Plan
 
 **Branch**: `feature/terrain-elevation-integration`
 **Created**: 2026-01-18

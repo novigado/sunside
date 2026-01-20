@@ -1,4 +1,4 @@
-# USD Explorer Setup Extension Template
+﻿# USD Explorer Setup Extension Template
 
 ![USD Explorer Hero Image](../../../readme-assets/usd_explorer.jpg)
 

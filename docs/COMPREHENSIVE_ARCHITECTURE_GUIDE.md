@@ -1,4 +1,4 @@
-# City Shadow Analyzer - Comprehensive Architecture Guide
+﻿# City Shadow Analyzer - Comprehensive Architecture Guide
 
 **Last Updated**: January 19, 2026
 **Version**: 0.2.0

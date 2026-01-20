@@ -1,4 +1,4 @@
-# Omniverse Nucleus & Connectors Integration Plan
+﻿# Omniverse Nucleus & Connectors Integration Plan
 
 ## Overview
 This document outlines the integration of NVIDIA Omniverse Nucleus and Connectors into the City Shadow Analyzer project, transforming it into a comprehensive, collaborative Omniverse solution.

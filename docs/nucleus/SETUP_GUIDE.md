@@ -1,4 +1,4 @@
-# Nucleus Setup Guide
+﻿# Nucleus Setup Guide
 
 **Last Updated**: January 17, 2026
 **Purpose**: Install and configure NVIDIA Omniverse Nucleus for City Shadow Analyzer caching

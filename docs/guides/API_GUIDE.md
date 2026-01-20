@@ -1,4 +1,4 @@
-# City Shadow Analyzer REST API
+﻿# City Shadow Analyzer REST API
 
 REST API service for real-time shadow analysis using OpenStreetMap building data and astronomical sun calculations.
 

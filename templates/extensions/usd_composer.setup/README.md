@@ -1,4 +1,4 @@
-# USD Composer Setup Extension Template
+﻿# USD Composer Setup Extension Template
 
 ![USD Composer Hero Image](../../../readme-assets/usd_composer.jpg)
 

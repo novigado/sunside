@@ -1,4 +1,4 @@
-# How to Test the Nucleus Status Window
+﻿# How to Test the Nucleus Status Window
 
 ## Quick Summary
 The Nucleus extension is **configured and built**, but you need to **launch the app** to see it in action.
