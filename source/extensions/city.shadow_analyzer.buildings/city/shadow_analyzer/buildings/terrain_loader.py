@@ -78,18 +78,18 @@ class TerrainLoader:
             BATCH_SIZE = 100
             all_results = []
             failed_batches = 0
-            
+
             if total_points > BATCH_SIZE:
                 num_batches = (total_points + BATCH_SIZE - 1) // BATCH_SIZE
                 carb.log_info(f"[TerrainLoader] Splitting into {num_batches} batches of {BATCH_SIZE} points to avoid timeout...")
-                
+
                 for batch_idx in range(num_batches):
                     start_idx = batch_idx * BATCH_SIZE
                     end_idx = min(start_idx + BATCH_SIZE, total_points)
                     batch_locations = locations[start_idx:end_idx]
-                    
+
                     carb.log_info(f"[TerrainLoader] Fetching batch {batch_idx + 1}/{num_batches} ({len(batch_locations)} points)...")
-                    
+
                     try:
                         response = requests.post(
                             self.api_url,
@@ -97,18 +97,18 @@ class TerrainLoader:
                             timeout=30
                         )
                         response.raise_for_status()
-                        
+
                         batch_data = response.json()
                         batch_results = batch_data.get("results", [])
                         all_results.extend(batch_results)
-                        
+
                         carb.log_info(f"[TerrainLoader] ✓ Batch {batch_idx + 1}/{num_batches} complete ({len(batch_results)} points)")
-                        
+
                     except requests.exceptions.HTTPError as e:
                         if e.response.status_code == 504:
                             failed_batches += 1
                             carb.log_error(f"[TerrainLoader] ✗ Batch {batch_idx + 1}/{num_batches} failed: 504 Gateway Timeout")
-                            
+
                             # Stop early if first 3 batches fail - API is likely down or you're throttled
                             if failed_batches >= 3 and batch_idx < 3:
                                 carb.log_error(f"[TerrainLoader] ⚠️ THROTTLING DETECTED: 3 consecutive 504 errors")
@@ -116,33 +116,33 @@ class TerrainLoader:
                                 carb.log_error(f"[TerrainLoader] ⚠️ Wait 15-30 minutes before trying again")
                                 carb.log_error(f"[TerrainLoader] ⚠️ Aborting terrain load - will use flat terrain")
                                 return None  # Return None to signal complete failure
-                            
+
                             # Fill with zeros for failed batch and continue
                             all_results.extend([{"elevation": 0.0} for _ in batch_locations])
                         else:
                             raise  # Re-raise non-504 errors
-                            
+
                     except requests.exceptions.Timeout:
                         failed_batches += 1
                         carb.log_error(f"[TerrainLoader] ✗ Batch {batch_idx + 1}/{num_batches} failed: Request timeout")
-                        
+
                         if failed_batches >= 3 and batch_idx < 3:
                             carb.log_error(f"[TerrainLoader] ⚠️ API appears to be down (3 consecutive timeouts)")
                             carb.log_error(f"[TerrainLoader] ⚠️ Aborting terrain load - use flat terrain instead")
                             return None
-                        
+
                         # Fill with zeros for failed batch
                         all_results.extend([{"elevation": 0.0} for _ in batch_locations])
-                    
+
                     except requests.exceptions.RequestException as e:
                         failed_batches += 1
                         carb.log_error(f"[TerrainLoader] ✗ Batch {batch_idx + 1}/{num_batches} failed: {e}")
-                        
+
                         if failed_batches >= 3 and batch_idx < 3:
                             return None
-                        
+
                         all_results.extend([{"elevation": 0.0} for _ in batch_locations])
-                
+
                 results = all_results
                 if failed_batches > 0:
                     carb.log_warn(f"[TerrainLoader] ⚠️ {failed_batches}/{num_batches} batches failed - using flat terrain for missing data")

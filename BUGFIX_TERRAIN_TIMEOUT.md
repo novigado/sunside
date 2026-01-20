@@ -1,7 +1,7 @@
 # Bug Fix: Terrain API 504 Timeout
 
-**Branch:** `bugfix/terrain-api-timeout`  
-**Date:** 2025  
+**Branch:** `bugfix/terrain-api-timeout`
+**Date:** 2025
 **Status:** ✅ FIXED
 
 ---
@@ -17,7 +17,7 @@
 
 The Open-Elevation API was being sent requests that were **too large**:
 
-1. **First call** (`_load_terrain()`): 
+1. **First call** (`_load_terrain()`):
    - `grid_resolution=20` → **20×20 = 400 points**
    - Status: Borderline acceptable, occasionally timed out
 
@@ -98,7 +98,7 @@ for batch_idx in range(num_batches):
     start_idx = batch_idx * BATCH_SIZE
     end_idx = min(start_idx + BATCH_SIZE, total_points)
     batch_locations = locations[start_idx:end_idx]
-    
+
     try:
         response = requests.post(self.api_url, json={"locations": batch_locations}, timeout=30)
         response.raise_for_status()
@@ -240,10 +240,10 @@ This could reduce 9-batch load from ~4.5 minutes to ~1.5 minutes (3x speedup).
 
 ## Conclusion
 
-**Problem:** 504 Gateway Timeout errors when loading terrain  
-**Root Cause:** Sending 2,500-point requests to free public API  
-**Solution:** Batch requests into 100-point chunks, reduce grid to 30×30  
-**Result:** Terrain loading now works reliably in ~4.5 minutes  
+**Problem:** 504 Gateway Timeout errors when loading terrain
+**Root Cause:** Sending 2,500-point requests to free public API
+**Solution:** Batch requests into 100-point chunks, reduce grid to 30×30
+**Result:** Terrain loading now works reliably in ~4.5 minutes
 
 The fix balances:
 - ✅ **Reliability**: No more 504 timeouts

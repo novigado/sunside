@@ -81,7 +81,7 @@ class BuildingLoader:
             # Retry logic with exponential backoff to handle transient failures
             max_retries = 2  # Reduced from 3 to avoid throttling
             retry_delay = 5  # Start with 5 seconds
-            
+
             for attempt in range(max_retries):
                 try:
                     if attempt > 0:
@@ -89,14 +89,14 @@ class BuildingLoader:
                         import time
                         time.sleep(retry_delay)
                         retry_delay *= 2  # Exponential backoff
-                    
+
                     response = requests.post(
                         self.overpass_url,
                         data={"data": query},
                         timeout=90  # Increased timeout for slow server response
                     )
                     response.raise_for_status()
-                    
+
                     data = response.json()
                     carb.log_info(f"[BuildingLoader] ✓ Received {len(data.get('elements', []))} elements")
 
@@ -113,7 +113,7 @@ class BuildingLoader:
                         carb.log_info(f"[BuildingLoader] TODO: Save {len(buildings)} buildings to Nucleus cache")
 
                     return buildings
-                    
+
                 except requests.exceptions.HTTPError as e:
                     if e.response.status_code == 504:
                         carb.log_warn(f"[BuildingLoader] ✗ Attempt {attempt + 1}/{max_retries} failed: 504 Gateway Timeout")
@@ -127,7 +127,7 @@ class BuildingLoader:
                             return []
                     else:
                         raise  # Re-raise non-504 HTTP errors
-                        
+
                 except requests.exceptions.Timeout:
                     carb.log_warn(f"[BuildingLoader] ✗ Attempt {attempt + 1}/{max_retries} failed: Request timeout")
                     if attempt < max_retries - 1:

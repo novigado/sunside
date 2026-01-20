@@ -56,7 +56,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         # Scene elements
         self._sun_light_prim_path = "/World/SunLight"
         self._ground_prim_path = "/World/Ground"
-        
+
         # Terrain generator instance (persists for elevation queries)
         self._terrain_generator = None
 
@@ -96,7 +96,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
     def _setup_nucleus_cache(self):
         """Initialize Nucleus caching if available."""
         carb.log_info("[city.shadow_analyzer.ui] ========== SETTING UP NUCLEUS CACHE ==========")
-        
+
         try:
             # Import Nucleus manager
             from city.shadow_analyzer.nucleus import get_nucleus_manager
@@ -676,7 +676,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 carb.log_info(f"[Shadow Analyzer] 💾 Location: ({self._latitude:.6f}, {self._longitude:.6f})")
                 carb.log_info(f"[Shadow Analyzer] 💾 Buildings: {len(buildings_data) if buildings_data else 0}")
                 carb.log_info(f"[Shadow Analyzer] 💾 Roads: {len(roads_data) if roads_data else 0}")
-                
+
                 if status_label:
                     status_label.text = "💾 Saving to Nucleus cache..."
 
@@ -1258,7 +1258,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             carb.log_error("[Shadow Analyzer] About to call gps_to_scene_coords()...")
             x, z = self._geometry_converter.gps_to_scene_coords(self._query_latitude, self._query_longitude)
             carb.log_error(f"[Shadow Analyzer] gps_to_scene_coords() returned: x={x}, z={z}")
-            
+
             # Get terrain elevation at this point (not y=0!)
             y = 0.0  # Default fallback
             if self._geometry_converter:
@@ -1268,7 +1268,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                     carb.log_info(f"[Shadow Analyzer] Query point at terrain elevation: {terrain_elev:.2f}m (marker at {y:.2f}m)")
                 else:
                     carb.log_warn(f"[Shadow Analyzer] No valid terrain elevation, using y=0")
-            
+
             query_point = Gf.Vec3f(x, y, z)
 
             # Calculate GPS offsets for logging
@@ -1926,7 +1926,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
         # Create geometry converter
         geometry_converter = BuildingGeometryConverter(stage)
-        
+
         # Pass terrain generator to geometry converter for elevation queries
         if has_terrain and self._terrain_generator:
             geometry_converter.set_terrain_generator(self._terrain_generator)
@@ -2063,7 +2063,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 carb.log_info(f"[Shadow Analyzer] === STEP 2: Loading terrain at reference ({reference_lat:.6f}, {reference_lon:.6f}) ===")
                 self._map_status_label.text = "🌄 Loading terrain elevation data..."
                 terrain_loaded = self._load_terrain_at_reference(reference_lat, reference_lon, from_combined_button=True)
-                
+
                 if not terrain_loaded:
                     carb.log_warn("[Shadow Analyzer] ⚠️ Terrain unavailable - continuing with flat terrain (elevation 0)")
                     self._map_status_label.text = "⚠️ Terrain API down - using flat terrain..."
