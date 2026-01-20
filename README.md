@@ -55,7 +55,7 @@
 
 3. **Launch City Shadow Analyzer:**
    ```powershell
-   .\repo.bat launch -- source/apps/city.shadow_analyzer.kit.kit
+   .\repo.bat launch
    ```
 
 4. **(Optional) Set up Nucleus caching:**
