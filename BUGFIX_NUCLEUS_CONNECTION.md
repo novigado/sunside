@@ -1,8 +1,8 @@
 # Nucleus Connection Bug Fix
 
-**Branch**: `bugfix/nucleus-connection-not-initialized`  
-**Date**: January 19, 2026  
-**Severity**: CRITICAL - Disabled all Nucleus caching functionality  
+**Branch**: `bugfix/nucleus-connection-not-initialized`
+**Date**: January 19, 2026
+**Severity**: CRITICAL - Disabled all Nucleus caching functionality
 **Status**: FIXED ✅
 
 ---
@@ -33,10 +33,10 @@ In `NucleusManager.__init__()`:
 ```python
 def __init__(self):
     # ... setup code ...
-    
+
     # Set up token-based authentication
     self._setup_authentication()
-    
+
     self._connected = False  # ❌ Set to False...
                             # ❌ But NEVER called check_connection()!
 ```
@@ -53,7 +53,7 @@ def __init__(self):
 
 ```
 NucleusManager.__init__()
-  └─> self._connected = False  
+  └─> self._connected = False
       (stays False forever!)
 
 User loads buildings
@@ -84,10 +84,10 @@ The method existed but was orphaned - never invoked anywhere!
 ```python
 def __init__(self):
     # ... setup code ...
-    
+
     # Set up token-based authentication
     self._setup_authentication()
-    
+
     # Check connection during initialization
     self._connected = False
     self.check_connection()  # ✅ NOW CALLED!
@@ -101,14 +101,14 @@ def check_connection(self) -> bool:
     try:
         result, _ = omni.client.stat(self._nucleus_server)
         self._connected = (result == omni.client.Result.OK)
-        
+
         if self._connected:
             carb.log_info(f"[NucleusManager] Successfully connected to {self._nucleus_server}")
             # Ensure project path exists
             self._ensure_directory(self._base_path)
         else:
             carb.log_warn(f"[NucleusManager] Cannot connect to {self._nucleus_server}: {result}")
-        
+
         return self._connected
     except Exception as e:
         carb.log_error(f"[NucleusManager] Error checking connection: {e}")

@@ -1117,7 +1117,7 @@ class CityAnalyzerAPIExtension(omni.ext.IExt):
 **Status**: FIXED on bugfix/nucleus-connection-not-initialized
 **Problem**: NucleusManager never called `check_connection()` during initialization
 **Impact**: `self._connected` remained False, all cache operations silently failed
-**Symptoms**: 
+**Symptoms**:
 - All building loads took 30-70s (no cache hits)
 - Nothing saved to Nucleus server
 - Logs showed "Not connected to Nucleus" warnings
