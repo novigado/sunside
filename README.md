@@ -37,7 +37,6 @@
 
 - **Windows 10/11** or **Linux** (Ubuntu 20.04+)
 - **NVIDIA RTX GPU** (RTX 2000 series or newer recommended)
-- **Visual Studio 2019 or 2022** (Windows only, with C++ workload)
 - **Python 3.10+** (included with Kit SDK)
 - **Git** for version control
 
