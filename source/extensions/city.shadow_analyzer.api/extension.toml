@@ -1,0 +1,47 @@
+[package]
+# Semantic Versionning is used: https://semver.org/
+version = "0.1.0"
+
+# Lists people or organizations that are considered the "authors" of the package.
+authors = ["Shadow Analyzer Team"]
+
+# The title and description fields are primarily for displaying extension info in UI
+title = "City Shadow Analyzer REST API"
+description = "REST API for shadow analysis queries - enables smartphone and web access"
+
+# Path (relative to the root) or content of readme
+readme = "docs/README.md"
+
+# One of categories for UI.
+category = "Services"
+
+# Keywords for the extension
+keywords = ["shadow", "api", "rest", "fastapi", "service"]
+
+# Location of change log file in target (final) folder of extension, relative to the root.
+changelog = "docs/CHANGELOG.md"
+
+# Preview image and icon. Folder named "data" automatically goes in git lfs (see .gitattributes file).
+preview_image = "data/preview.png"
+icon = "data/icon.png"
+
+[dependencies]
+"omni.kit.uiapp" = {}
+"city.shadow_analyzer.sun" = {}
+"city.shadow_analyzer.buildings" = {}
+
+[[python.module]]
+name = "city.shadow_analyzer.api"
+
+[[python.pipapi]]
+use_online_index = true
+
+[python.pipapi.requirements]
+"fastapi" = "0.128.0"
+"uvicorn" = "0.40.0"
+"pydantic" = "2.12.5"
+
+[[test]]
+dependencies = [
+    "omni.kit.test"
+]

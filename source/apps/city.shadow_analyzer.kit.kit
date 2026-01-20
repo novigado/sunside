@@ -81,6 +81,9 @@ viewport.autoFrame.mode = "first_open"  # Auto frame the first time the viewport
 
 
 [settings]
+# Extension search paths
+app.exts.folders.'++' = ["${app}/../extensions", "${app}/../exts"]
+
 # API Server Configuration
 exts."city.shadow_analyzer.api".host = "0.0.0.0"
 exts."city.shadow_analyzer.api".port = 8000
