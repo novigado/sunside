@@ -1026,9 +1026,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
             if result is None:
                 if status_label:
-                    status_label.text = "Error loading terrain data"
-                    status_label.style = {"font_size": 12, "color": 0xFFFF0000}  # Red
-                carb.log_error("[Shadow Analyzer] Failed to load terrain data")
+                    status_label.text = "⚠️ Terrain API unavailable - continuing without terrain"
+                    status_label.style = {"font_size": 12, "color": 0xFFFFA500}  # Orange
+                carb.log_warn("[Shadow Analyzer] ⚠️ Open-Elevation API is down - skipping terrain load")
+                carb.log_warn("[Shadow Analyzer] ⚠️ Buildings will be loaded at elevation 0 (flat terrain)")
                 self._restore_terrain_button()
                 return
 
@@ -1864,8 +1865,10 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             )
 
             if result is None:
-                carb.log_warn("[Shadow Analyzer] Failed to load terrain data - continuing without terrain")
-                return False
+                carb.log_warn("[Shadow Analyzer] ⚠️ Open-Elevation API is down - continuing without terrain")
+                carb.log_warn("[Shadow Analyzer] ⚠️ Buildings will be loaded at elevation 0 (flat terrain)")
+                # Continue loading buildings without terrain - return True to proceed
+                return True  # Changed from False to allow buildings to load
 
             elevation_grid, lat_spacing, lon_spacing = result
             min_elev = elevation_grid.min()
@@ -2058,7 +2061,12 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
 
                 # ========== STEP 2: Load terrain with calculated reference point ==========
                 carb.log_info(f"[Shadow Analyzer] === STEP 2: Loading terrain at reference ({reference_lat:.6f}, {reference_lon:.6f}) ===")
+                self._map_status_label.text = "🌄 Loading terrain elevation data..."
                 terrain_loaded = self._load_terrain_at_reference(reference_lat, reference_lon, from_combined_button=True)
+                
+                if not terrain_loaded:
+                    carb.log_warn("[Shadow Analyzer] ⚠️ Terrain unavailable - continuing with flat terrain (elevation 0)")
+                    self._map_status_label.text = "⚠️ Terrain API down - using flat terrain..."
 
                 # Wait for UI update
                 await omni.kit.app.get_app().next_update_async()

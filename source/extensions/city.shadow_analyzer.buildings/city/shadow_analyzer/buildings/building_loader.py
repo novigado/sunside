@@ -78,35 +78,66 @@ class BuildingLoader:
 
             carb.log_info(f"[BuildingLoader] Querying Overpass API...")
 
-            response = requests.post(
-                self.overpass_url,
-                data={"data": query},
-                timeout=90  # Increased timeout for slow server response
-            )
-            response.raise_for_status()
+            # Retry logic with exponential backoff to handle transient failures
+            max_retries = 2  # Reduced from 3 to avoid throttling
+            retry_delay = 5  # Start with 5 seconds
+            
+            for attempt in range(max_retries):
+                try:
+                    if attempt > 0:
+                        carb.log_info(f"[BuildingLoader] Retry attempt {attempt + 1}/{max_retries} after {retry_delay}s delay...")
+                        import time
+                        time.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                    
+                    response = requests.post(
+                        self.overpass_url,
+                        data={"data": query},
+                        timeout=90  # Increased timeout for slow server response
+                    )
+                    response.raise_for_status()
+                    
+                    data = response.json()
+                    carb.log_info(f"[BuildingLoader] ✓ Received {len(data.get('elements', []))} elements")
 
-            data = response.json()
-            carb.log_info(f"[BuildingLoader] Received {len(data.get('elements', []))} elements")
+                    # Parse buildings
+                    buildings = self._parse_osm_data(data)
+                    carb.log_info(f"[BuildingLoader] ✓ Parsed {len(buildings)} buildings")
 
-            # Parse buildings
-            buildings = self._parse_osm_data(data)
-            carb.log_info(f"[BuildingLoader] Parsed {len(buildings)} buildings")
+                    # Cache the results in memory
+                    self._cache[cache_key] = buildings
 
-            # Cache the results in memory
-            self._cache[cache_key] = buildings
+                    # TODO: Save to Nucleus cache if available
+                    # This will be implemented after USD stage creation is integrated
+                    if self._nucleus_cache:
+                        carb.log_info(f"[BuildingLoader] TODO: Save {len(buildings)} buildings to Nucleus cache")
 
-            # TODO: Save to Nucleus cache if available
-            # This will be implemented after USD stage creation is integrated
-            if self._nucleus_cache:
-                carb.log_info(f"[BuildingLoader] TODO: Save {len(buildings)} buildings to Nucleus cache")
+                    return buildings
+                    
+                except requests.exceptions.HTTPError as e:
+                    if e.response.status_code == 504:
+                        carb.log_warn(f"[BuildingLoader] ✗ Attempt {attempt + 1}/{max_retries} failed: 504 Gateway Timeout")
+                        if attempt < max_retries - 1:
+                            carb.log_warn(f"[BuildingLoader] Waiting {retry_delay}s before retry...")
+                            continue
+                        else:
+                            carb.log_error(f"[BuildingLoader] ⚠️ API THROTTLING DETECTED - All retries exhausted")
+                            carb.log_error(f"[BuildingLoader] ⚠️ Your IP may be rate-limited. Wait 15-30 minutes before trying again.")
+                            carb.log_error(f"[BuildingLoader] ⚠️ Or use Nucleus cache to load previously downloaded maps.")
+                            return []
+                    else:
+                        raise  # Re-raise non-504 HTTP errors
+                        
+                except requests.exceptions.Timeout:
+                    carb.log_warn(f"[BuildingLoader] ✗ Attempt {attempt + 1}/{max_retries} failed: Request timeout")
+                    if attempt < max_retries - 1:
+                        carb.log_warn(f"[BuildingLoader] Waiting {retry_delay}s before retry...")
+                        continue
+                    else:
+                        carb.log_error(f"[BuildingLoader] ⏱️ TIMEOUT: OpenStreetMap Overpass API is not responding")
+                        carb.log_error(f"[BuildingLoader] The server may be overloaded. Please try again in a few minutes.")
+                        return []
 
-            return buildings
-
-        except requests.exceptions.Timeout as e:
-            carb.log_error(f"[BuildingLoader] ⏱️ TIMEOUT: OpenStreetMap Overpass API is not responding")
-            carb.log_error(f"[BuildingLoader] The server may be overloaded. Please try again in a few minutes.")
-            carb.log_error(f"[BuildingLoader] Error details: {e}")
-            return []
         except requests.exceptions.RequestException as e:
             carb.log_error(f"[BuildingLoader] ❌ Network error fetching OSM data: {e}")
             carb.log_error(f"[BuildingLoader] Check your internet connection or try again later")
