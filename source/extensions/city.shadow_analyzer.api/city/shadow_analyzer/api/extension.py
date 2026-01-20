@@ -70,9 +70,13 @@ class CityAnalyzerAPIExtension(omni.ext.IExt):
     def _run_server(self):
         """Run the API server in a separate thread."""
         try:
+            carb.log_info("[city.shadow_analyzer.api] _run_server thread started, calling api_server.run()")
             self._api_server.run()
+            carb.log_info("[city.shadow_analyzer.api] api_server.run() returned")
         except Exception as e:
             carb.log_error(f"[city.shadow_analyzer.api] Server error: {e}")
+            import traceback
+            carb.log_error(f"[city.shadow_analyzer.api] Traceback: {traceback.format_exc()}")
 
     def on_shutdown(self):
         """Called when the extension shuts down."""
