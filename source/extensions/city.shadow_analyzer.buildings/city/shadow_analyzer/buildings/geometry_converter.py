@@ -575,7 +575,11 @@ class BuildingGeometryConverter:
             return elevation
         
         # Fallback to mesh-based query (slower, for backwards compatibility)
-        carb.log_warn(f"[BuildingConverter] No terrain generator - falling back to mesh query at ({x:.1f}, {z:.1f})")
+        # Log warning only once per converter instance to avoid spam
+        if not hasattr(self, '_terrain_fallback_warned'):
+            carb.log_warn(f"[BuildingConverter] No terrain generator available - using mesh query fallback (this may be slower)")
+            self._terrain_fallback_warned = True
+        
         terrain_prim = self.stage.GetPrimAtPath("/World/Terrain")
         if not terrain_prim or not terrain_prim.IsA(UsdGeom.Mesh):
             return 0.0
