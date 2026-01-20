@@ -5,7 +5,7 @@
 Removed all emojis from 30+ markdown files including:
 - README.md (removed headers, features, section markers)
 - All documentation in `docs/` folder
-- All guides, architecture docs, and bug reports  
+- All guides, architecture docs, and bug reports
 - Template documentation
 - Test documentation
 

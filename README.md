@@ -45,8 +45,8 @@
 
 1. **Clone the repository:**
    ```powershell
-   git clone https://github.com/NVIDIA-Omniverse/kit-app-template.git
-   cd kit-app-template
+   git clone https://github.com/novigado/sunside.git
+   cd sunside
    ```
 
 2. **Build the application:**
@@ -111,8 +111,8 @@
 Query shadows without the GUI:
 
 ```bash
-# Start API service (headless mode)
-.\repo.bat launch -- source/apps/city.shadow_analyzer.api_service.kit
+# Start the main application (API is available automatically)
+.\repo.bat launch -- source/apps/city.shadow_analyzer.kit.kit
 
 # Query shadow at location
 curl -X POST http://localhost:8000/api/shadow/query \
@@ -233,7 +233,7 @@ git push origin feature/my-new-feature
 ## Project Structure
 
 ```
-kit-app-template/
+sunside/
 ├── docs/                          # Documentation
 │   ├── guides/                    # User guides
 │   ├── development/               # Developer docs
@@ -241,10 +241,10 @@ kit-app-template/
 │
 ├── source/
 │   ├── apps/                      # Kit applications
-│   │   ├── city.shadow_analyzer.kit.kit            # Main desktop app
-│   │   └── city.shadow_analyzer.api_service.kit    # Headless API service
+│   │   └── city.shadow_analyzer.kit.kit        # Main application (UI + API)
 │   │
 │   └── extensions/                # Custom extensions
+│       ├── city.shadow_analyzer.api/           # REST API server
 │       ├── city.shadow_analyzer.ui/            # UI extension
 │       ├── city.shadow_analyzer.buildings/     # Building loader
 │       ├── city.shadow_analyzer.sun/           # Sun calculator
@@ -301,7 +301,7 @@ Measured on: Windows 11, RTX 4090, 32GB RAM, 1Gbps network to Nucleus
 - **Shadow Resolution**: Depends on scene mesh density
 - **Nucleus Requirement**: Caching requires Nucleus server access
 
-See [GitHub Issues](https://github.com/NVIDIA-Omniverse/kit-app-template/issues) for current bugs.
+See [GitHub Issues](https://github.com/novigado/sunside/issues) for current bugs.
 
 ---
 
@@ -324,8 +324,8 @@ Portions of this software are governed by the NVIDIA Omniverse EULA. See [PRODUC
 
 ## Contact & Support
 
-- **Issues**: [GitHub Issues](https://github.com/NVIDIA-Omniverse/kit-app-template/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/NVIDIA-Omniverse/kit-app-template/discussions)
+- **Issues**: [GitHub Issues](https://github.com/novigado/sunside/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/novigado/sunside/discussions)
 - **Omniverse Forums**: [NVIDIA Developer Forums](https://forums.developer.nvidia.com/c/omniverse/)
 
 ---
@@ -345,7 +345,7 @@ Portions of this software are governed by the NVIDIA Omniverse EULA. See [PRODUC
 - [ ] Multi-user collaboration via Nucleus
 - [ ] Cloud deployment templates
 
-See [GitHub Projects](https://github.com/NVIDIA-Omniverse/kit-app-template/projects) for detailed roadmap.
+See [GitHub Projects](https://github.com/novigado/sunside/projects) for detailed roadmap.
 
 ---
 
