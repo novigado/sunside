@@ -26,7 +26,7 @@ Answer `yes` to enable streaming for your application. You can then pick from th
 ```bash
 ? Do you want to add application layers? Yes
 ? Browse layers with arrow keys ↑↓: [SPACE to toggle selection, ENTER to confirm selection(s)]
-❯ [ ] [omni_default_streaming]: Omniverse Kit App Streaming (Default)
+ [ ] [omni_default_streaming]: Omniverse Kit App Streaming (Default)
   [ ] [nvcf_streaming]: NVCF Streaming
   [ ] [omni_gdn_streaming]: GDN Streaming
 ```

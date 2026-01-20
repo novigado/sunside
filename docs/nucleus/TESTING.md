@@ -2,14 +2,14 @@
 
 This guide explains how to test if Nucleus is running and verify the integration works.
 
-## 🔍 Quick Check Methods
+##  Quick Check Methods
 
 ### Method 1: Check the Nucleus Status Window (EASIEST)
 
 When you launch the Shadow Analyzer app, a **"Nucleus Status"** window will appear showing:
 
-- ✅ **Connected** = Nucleus is running and accessible
-- ⚠️ **Not Connected** = Nucleus is not running or not accessible
+-  **Connected** = Nucleus is running and accessible
+- ️ **Not Connected** = Nucleus is not running or not accessible
 
 The window shows:
 - Connection status (green = connected, yellow = not connected)
@@ -23,14 +23,14 @@ Look at the console output when the app starts. You'll see:
 
 **If Nucleus IS running:**
 ```
-[city.shadow_analyzer.nucleus] ✅ Successfully connected to Nucleus
+[city.shadow_analyzer.nucleus]  Successfully connected to Nucleus
 [city.shadow_analyzer.nucleus] Server: omniverse://localhost
 [city.shadow_analyzer.nucleus] Project Path: /Projects/CityData
 ```
 
 **If Nucleus is NOT running:**
 ```
-[city.shadow_analyzer.nucleus] ⚠️  No Nucleus connection available - running in local mode
+[city.shadow_analyzer.nucleus] ️  No Nucleus connection available - running in local mode
 ```
 
 ### Method 3: Test from Windows
@@ -43,7 +43,7 @@ Get-Process | Where-Object {$_.ProcessName -like "*nucleus*"}
 
 If you see processes, Nucleus is running. If not, it needs to be started.
 
-## 🚀 Starting Nucleus
+##  Starting Nucleus
 
 ### Option 1: Omniverse Launcher (Recommended)
 
@@ -60,7 +60,7 @@ If you have Nucleus installed but not running:
 2. Run the Nucleus executable
 3. Check that it starts on port 3009 (default)
 
-## 🧪 Testing the Integration
+##  Testing the Integration
 
 ### Step 1: Launch the App
 
@@ -76,8 +76,8 @@ Look for the "Nucleus Status" window that automatically appears.
 ### Step 3: Test Connection Button
 
 Click the **"Test Connection"** button in the Nucleus Status window to verify:
-- If successful: ✅ "Connection successful!" appears
-- If failed: ⚠️ "Connection failed. Is Nucleus running?" appears
+- If successful:  "Connection successful!" appears
+- If failed: ️ "Connection failed. Is Nucleus running?" appears
 
 ### Step 4: Test Cache Operations (Manual Test)
 
@@ -96,21 +96,21 @@ Once connected, you can test cache operations by:
    [CityCacheManager] Loaded in X.XX seconds (vs Y.YY seconds from OSM)
    ```
 
-## 📊 Expected Results
+##  Expected Results
 
 ### With Nucleus Running:
-- Status window shows: ✅ Connected
+- Status window shows:  Connected
 - Console shows connection success
 - Cache operations save to Nucleus
 - Subsequent loads are 10x faster (cache hit)
 
 ### Without Nucleus:
-- Status window shows: ⚠️ Not Connected
+- Status window shows: ️ Not Connected
 - Console shows warning about local mode
 - App still works (falls back to OSM every time)
 - No performance improvement from caching
 
-## 🔧 Troubleshooting
+##  Troubleshooting
 
 ### "Not Connected" but Nucleus is Running
 
@@ -141,14 +141,14 @@ Once connected, you can test cache operations by:
 2. Look for errors in console about window creation
 3. Try Window > Extensions and manually enable "City Shadow Analyzer - Nucleus Integration"
 
-## 📝 Next Steps
+##  Next Steps
 
 Once Nucleus is confirmed working:
-1. ✅ Phase 1 is complete (core integration)
-2. 🔄 Ready for Phase 2 (UI integration with building loader)
-3. 🎯 Next: Integrate caching into the building loader for automatic caching
+1.  Phase 1 is complete (core integration)
+2.  Ready for Phase 2 (UI integration with building loader)
+3.  Next: Integrate caching into the building loader for automatic caching
 
-## 💡 Pro Tips
+##  Pro Tips
 
 - **Keep the Nucleus Status window visible** while testing - it updates when you click "Test Connection"
 - **Check the console logs** - they show detailed information about cache hits/misses

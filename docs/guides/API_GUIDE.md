@@ -4,12 +4,12 @@ REST API service for real-time shadow analysis using OpenStreetMap building data
 
 ## Features
 
-- 🌞 **Real-time shadow detection** at any GPS coordinate
-- 🏢 **OpenStreetMap integration** - automatically loads building data
-- 🔆 **Astronomical sun calculations** - accurate azimuth and elevation
-- 📱 **Mobile-friendly API** - CORS-enabled for smartphone apps
-- 📊 **Interactive documentation** - Swagger UI at `/docs`
-- ⚡ **Optimized performance** - headless mode for production
+-  **Real-time shadow detection** at any GPS coordinate
+-  **OpenStreetMap integration** - automatically loads building data
+-  **Astronomical sun calculations** - accurate azimuth and elevation
+-  **Mobile-friendly API** - CORS-enabled for smartphone apps
+-  **Interactive documentation** - Swagger UI at `/docs`
+-  **Optimized performance** - headless mode for production
 
 ## Quick Start
 
@@ -140,14 +140,14 @@ async function checkShadow(lat, lon) {
   const data = await response.json();
 
   if (data.is_shadowed) {
-    console.log('🌙 Location is in shadow');
+    console.log(' Location is in shadow');
     if (data.sun_elevation < 0) {
-      console.log('☀️ Sun is below horizon (nighttime)');
+      console.log('️ Sun is below horizon (nighttime)');
     } else if (data.blocking_object) {
-      console.log(`🏢 Blocked by: ${data.blocking_object}`);
+      console.log(` Blocked by: ${data.blocking_object}`);
     }
   } else {
-    console.log('☀️ Location is in sunlight');
+    console.log('️ Location is in sunlight');
   }
 
   return data;

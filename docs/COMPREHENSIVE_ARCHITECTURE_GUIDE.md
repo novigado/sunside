@@ -368,7 +368,7 @@ Query for buildings at (lat, lon)
     │
     ├─> 1. Check Nucleus Cache (FASTEST - 3-5s)
     │       ├─> USDC binary format on Nucleus server
-    │       ├─> Cache HIT? → Load from Nucleus ✅
+    │       ├─> Cache HIT? → Load from Nucleus 
     │       └─> Cache MISS? ↓
     │
     ├─> 2. Fetch from OpenStreetMap API (SLOW - 30-70s)
@@ -629,7 +629,7 @@ FastAPI Thread                   Main Thread (USD/Kit)
    │  └─ Load buildings from Nucleus USDC
    │  └─ Load terrain from Nucleus USDC
    │  └─ Copy to main USD stage
-   │  └─ DONE ✅
+   │  └─ DONE 
    │
    └─ CACHE MISS → Continue to step 3
 
@@ -1327,26 +1327,26 @@ carb.log_error("[YourExtension] Error message")
 
 ### What Works Well
 
-✅ **Sun position calculation** - Accurate astronomical algorithms
-✅ **Building data loading** - Real OSM data with height estimation
-✅ **Nucleus caching** - 10-20x performance improvement
-✅ **Shadow analysis** - CPU ray-casting gives correct results
-✅ **API integration** - REST API works for headless queries
-✅ **Coordinate system** - GPS ↔ scene transformations accurate
+ **Sun position calculation** - Accurate astronomical algorithms
+ **Building data loading** - Real OSM data with height estimation
+ **Nucleus caching** - 10-20x performance improvement
+ **Shadow analysis** - CPU ray-casting gives correct results
+ **API integration** - REST API works for headless queries
+ **Coordinate system** - GPS ↔ scene transformations accurate
 
 ### What Needs Work
 
-⚠️ **~~Nucleus caching broken~~** - FIXED! Was not connecting during init
-⚠️ **OSM API speed** - Slow public API (30-70s queries)
-⚠️ **Shadow query performance** - CPU ray casting bottleneck
-⚠️ **Cache invalidation** - No automatic expiry yet
+️ **~~Nucleus caching broken~~** - FIXED! Was not connecting during init
+️ **OSM API speed** - Slow public API (30-70s queries)
+️ **Shadow query performance** - CPU ray casting bottleneck
+️ **Cache invalidation** - No automatic expiry yet
 
 ### Architectural Highlights
 
-🏆 **Extension modularity** - Clean separation of concerns
-🏆 **3-tier caching** - Excellent performance optimization
-🏆 **Thread coordination** - Elegant queue-based API integration
-🏆 **USD scene graph** - Leverages industry-standard format
+ **Extension modularity** - Clean separation of concerns
+ **3-tier caching** - Excellent performance optimization
+ **Thread coordination** - Elegant queue-based API integration
+ **USD scene graph** - Leverages industry-standard format
 
 ### Most Important Files to Understand
 
@@ -1362,4 +1362,4 @@ carb.log_error("[YourExtension] Error message")
 
 **Welcome to the team! This guide should give you a comprehensive understanding of how everything works. Don't hesitate to dig into the code - the architecture is modular and well-commented.**
 
-**Happy coding! 🌞🏙️**
+**Happy coding! ️**

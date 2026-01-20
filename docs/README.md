@@ -1,10 +1,10 @@
-﻿# City Shadow Analyzer Documentation 📚
+﻿# City Shadow Analyzer Documentation 
 
 Welcome to the City Shadow Analyzer documentation! This directory contains all guides, tutorials, and technical documentation for the project.
 
 ---
 
-## 📖 Quick Links
+##  Quick Links
 
 - **[User Guide](guides/USER_GUIDE.md)** - Complete guide for using City Shadow Analyzer
 - **[Getting Started](guides/GETTING_STARTED.md)** - Quick start tutorial
@@ -14,7 +14,7 @@ Welcome to the City Shadow Analyzer documentation! This directory contains all g
 
 ---
 
-## 📂 Documentation Structure
+##  Documentation Structure
 
 ### User Guides (`guides/`)
 Documentation for end users and API consumers:
@@ -51,7 +51,7 @@ Documentation for Omniverse Nucleus integration:
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 New to City Shadow Analyzer? Start here:
 
@@ -62,7 +62,7 @@ New to City Shadow Analyzer? Start here:
 
 ---
 
-## 🏗️ For Developers
+## ️ For Developers
 
 Contributing to the project? Check these:
 
@@ -72,7 +72,7 @@ Contributing to the project? Check these:
 
 ---
 
-## 🔍 Need Help?
+##  Need Help?
 
 - **Questions about features?** → See [User Guide](guides/USER_GUIDE.md)
 - **API not working?** → Check [API Guide](guides/API_GUIDE.md)
@@ -81,7 +81,7 @@ Contributing to the project? Check these:
 
 ---
 
-## 📋 Documentation Versions
+##  Documentation Versions
 
 - **Current Version**: 0.2.0 (Phase 2 Complete - Nucleus Caching)
 - **Last Updated**: January 17, 2026
@@ -89,13 +89,13 @@ Contributing to the project? Check these:
 
 ---
 
-## 🎯 What's New
+##  What's New
 
 **Phase 2 Complete (January 2026)**:
-- ✅ Nucleus building cache (10-20x faster loading)
-- ✅ Nucleus terrain cache (5-10x faster loading)
-- ✅ Binary USD format support
-- ✅ Comprehensive error handling
+-  Nucleus building cache (10-20x faster loading)
+-  Nucleus terrain cache (5-10x faster loading)
+-  Binary USD format support
+-  Comprehensive error handling
 
 See [PHASE2_SUMMARY.md](development/PHASE2_SUMMARY.md) for details.
 

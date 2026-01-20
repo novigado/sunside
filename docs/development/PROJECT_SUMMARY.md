@@ -1,6 +1,6 @@
 ﻿# City Shadow Analyzer - Project Summary
 
-## 🎉 Congratulations!
+##  Congratulations!
 
 You've successfully created a **City Shadow Analyzer** application using NVIDIA Omniverse Kit!
 
@@ -28,23 +28,23 @@ A GPU-accelerated 3D application that calculates and visualizes sun positions an
 
 ## Key Features Implemented
 
-✅ **Accurate Sun Position Calculation**
+ **Accurate Sun Position Calculation**
 - Uses standard astronomical algorithms
 - Based on date, time, and GPS coordinates
 - Accounts for Earth's rotation and orbit
 
-✅ **Real-time 3D Visualization**
+ **Real-time 3D Visualization**
 - RTX-rendered shadows for accuracy
 - Directional sun light automatically positioned
 - Interactive 3D viewport
 
-✅ **User Interface**
+ **User Interface**
 - Location input (latitude/longitude)
 - Time controls (current or custom)
 - Sun position display (azimuth, elevation)
 - Test scene generation
 
-✅ **Test Environment**
+ **Test Environment**
 - Simple procedural city buildings
 - Ground plane for shadow observation
 - Multiple building heights and positions
@@ -255,22 +255,22 @@ Expected: Sun in west, low elevation or below horizon
 
 ## Success Metrics
 
-### What Works Now ✅
-- ✅ Sun position calculation (astronomical accuracy)
-- ✅ 3D visualization with RTX shadows
-- ✅ Interactive UI controls
-- ✅ Test scene generation
-- ✅ Time and location controls
-- ✅ Visual validation of results
+### What Works Now 
+-  Sun position calculation (astronomical accuracy)
+-  3D visualization with RTX shadows
+-  Interactive UI controls
+-  Test scene generation
+-  Time and location controls
+-  Visual validation of results
 
-### Coming Soon 🚧
-- 🚧 Point query system (click to check sun/shadow)
-- 🚧 Real city data loading
-- 🚧 REST API for remote queries
-- 🚧 Mobile client support
-- 🚧 Caching and optimization
+### Coming Soon 
+-  Point query system (click to check sun/shadow)
+-  Real city data loading
+-  REST API for remote queries
+-  Mobile client support
+-  Caching and optimization
 
-## Congratulations! 🎊
+## Congratulations! 
 
 You now have a working foundation for a city shadow analysis system. The application can:
 - Calculate accurate sun positions anywhere on Earth

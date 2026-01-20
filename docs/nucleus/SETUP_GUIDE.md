@@ -26,9 +26,9 @@ Nucleus is NVIDIA's content management server that provides:
 - **Team collaboration** (optional)
 
 **Do I need Nucleus?**
-- ❌ **Not required** - City Shadow Analyzer works without it (uses JSON cache)
-- ✅ **Recommended** - Dramatically improves performance (3-5s vs 30-70s loading)
-- ✅ **Optional** - Can add it later when you need performance
+-  **Not required** - City Shadow Analyzer works without it (uses JSON cache)
+-  **Recommended** - Dramatically improves performance (3-5s vs 30-70s loading)
+-  **Optional** - Can add it later when you need performance
 
 ---
 
@@ -79,7 +79,7 @@ Nucleus is NVIDIA's content management server that provides:
    ```
 
 2. **Check Nucleus Status window**:
-   - Should show: ✅ **Connected**
+   - Should show:  **Connected**
    - Server: `omniverse://localhost`
 
 3. **Click "Test Connection"** to verify
@@ -90,7 +90,7 @@ Nucleus is NVIDIA's content management server that provides:
    - First load: 30-60 seconds (cache miss, saves to Nucleus)
 2. **Clear the scene**
 3. **Load same location again**
-   - Second load: 3-5 seconds (cache hit!) ✅
+   - Second load: 3-5 seconds (cache hit!) 
 
 **Success!** You're now getting 10-20x performance improvements.
 
@@ -435,7 +435,7 @@ exts."city.shadow_analyzer.nucleus".api_token = "your-cloud-api-token"
 
 1. Launch City Shadow Analyzer
 2. Check Nucleus Status window
-3. Should show: ✅ Connected to cloud Nucleus
+3. Should show:  Connected to cloud Nucleus
 
 ---
 
@@ -446,17 +446,17 @@ exts."city.shadow_analyzer.nucleus".api_token = "your-cloud-api-token"
 1. **Launch City Shadow Analyzer**
 2. **Open Nucleus Status window** (Window → Nucleus Status)
 3. **Click "Test Connection"**
-4. **Expected**: ✅ Connected, server info displayed
+4. **Expected**:  Connected, server info displayed
 
 ### Test 2: Cache Performance Test
 
 1. **Load a city** (e.g., San Francisco, 37.7749, -122.4194)
    - First load: 30-60 seconds (downloads from OpenStreetMap, saves to Nucleus)
-   - Check logs for: "💾 Saving buildings to Nucleus cache..."
+   - Check logs for: " Saving buildings to Nucleus cache..."
 2. **Clear the scene** (Scene → Clear All)
 3. **Load same city again**
    - Second load: 3-5 seconds (loads from Nucleus cache)
-   - Check logs for: "✅ BUILDING CACHE HIT! Loading from Nucleus..."
+   - Check logs for: " BUILDING CACHE HIT! Loading from Nucleus..."
 
 **Success if**: Second load is 10-20x faster!
 
@@ -638,9 +638,9 @@ docker-compose -f nucleus-stack-no-ssl.yml restart
 
 ## Next Steps
 
-1. ✅ **Nucleus installed and running**
-2. ✅ **Connection verified** in City Shadow Analyzer
-3. ✅ **Cache performance tested** (10-20x faster!)
+1.  **Nucleus installed and running**
+2.  **Connection verified** in City Shadow Analyzer
+3.  **Cache performance tested** (10-20x faster!)
 4. **Optional**: Set up [validation testing](VALIDATION.md)
 5. **Optional**: Review [integration details](INTEGRATION.md)
 

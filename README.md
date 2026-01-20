@@ -1,4 +1,4 @@
-﻿# City Shadow Analyzer 🌆☀️
+﻿# City Shadow Analyzer
 
 <p align="center">
   <strong>GPU-Accelerated Solar Analysis for Urban Environments</strong><br>
@@ -7,31 +7,31 @@
 
 ---
 
-## 🎯 Overview
+## Overview
 
 **City Shadow Analyzer** is a high-performance application for analyzing solar shadows in urban environments. It combines real-time 3D visualization, terrain elevation data, and GPU-accelerated ray casting to determine solar access for any point in a city at any time of day.
 
 ### Key Features
 
-- 🏙️ **OpenStreetMap Integration** - Automatic building and road data loading
-- 🗻 **Terrain Elevation** - Real-world elevation data from Open-Elevation API
-- ☀️ **Solar Position Calculation** - Accurate sun position for any location and time
-- 🔍 **Shadow Analysis** - GPU-accelerated ray casting for shadow detection
-- 💾 **Nucleus Caching** - 10-20x faster loading with Omniverse Nucleus
-- 🌐 **REST API** - Headless service mode for API queries
-- 🎨 **Real-time 3D Visualization** - Interactive scene navigation and queries
+- **OpenStreetMap Integration** - Automatic building and road data loading
+- **Terrain Elevation** - Real-world elevation data from Open-Elevation API
+- **Solar Position Calculation** - Accurate sun position for any location and time
+- **Shadow Analysis** - GPU-accelerated ray casting for shadow detection
+- **Nucleus Caching** - 10-20x faster loading with Omniverse Nucleus
+- **REST API** - Headless service mode for API queries
+- **Real-time 3D Visualization** - Interactive scene navigation and queries
 
 ### Performance
 
 | Feature | Without Cache | With Nucleus Cache | Speedup |
 |---------|--------------|-------------------|---------|
-| Building Load | 30-60 seconds | 2-5 seconds | **10-20x** ⚡ |
-| Terrain Load | 10-20 seconds | 2-3 seconds | **5-10x** ⚡ |
-| Combined | 40-70 seconds | 5-10 seconds | **8-10x** ⚡ |
+| Building Load | 30-60 seconds | 2-5 seconds | **10-20x** |
+| Terrain Load | 10-20 seconds | 2-3 seconds | **5-10x** |
+| Combined | 40-70 seconds | 5-10 seconds | **8-10x** |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -64,7 +64,7 @@
 
 ---
 
-## 📖 Documentation
+## Documentation
 
 ### For Users
 - **[User Guide](docs/guides/USER_GUIDE.md)** - Complete usage documentation
@@ -83,11 +83,11 @@
 - **[Integration Details](docs/nucleus/INTEGRATION.md)** - How caching works
 - **[Validation Guide](docs/nucleus/VALIDATION.md)** - Testing Nucleus
 
-**[📚 View All Documentation](docs/README.md)**
+**[View All Documentation](docs/README.md)**
 
 ---
 
-## 🎮 Usage Example
+## Usage Example
 
 ### Desktop Application
 
@@ -139,7 +139,7 @@ See [API Guide](docs/guides/API_GUIDE.md) for complete API documentation.
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -183,7 +183,7 @@ See [Architecture Documentation](docs/development/ARCHITECTURE.md) for detailed 
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ```powershell
 # Run all tests
@@ -200,7 +200,7 @@ See [Testing Guide](docs/development/TESTING.md) for comprehensive testing docum
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please see:
 
@@ -230,7 +230,7 @@ git push origin feature/my-new-feature
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 
 ```
 kit-app-template/
@@ -262,7 +262,7 @@ kit-app-template/
 
 ---
 
-## 🎓 Learning Resources
+## Learning Resources
 
 ### Official Documentation
 - **[Omniverse Kit SDK Docs](https://docs.omniverse.nvidia.com/kit/docs/kit-sdk/latest/)**
@@ -279,7 +279,7 @@ kit-app-template/
 
 ---
 
-## 📊 Performance Benchmarks
+## Performance Benchmarks
 
 Measured on: Windows 11, RTX 4090, 32GB RAM, 1Gbps network to Nucleus
 
@@ -294,7 +294,7 @@ Measured on: Windows 11, RTX 4090, 32GB RAM, 1Gbps network to Nucleus
 
 ---
 
-## 🐛 Known Issues & Limitations
+## Known Issues & Limitations
 
 - **OpenStreetMap Rate Limits**: Maximum ~10,000 buildings per query
 - **Elevation Data Accuracy**: ±5-10m vertical accuracy from SRTM data
@@ -305,7 +305,7 @@ See [GitHub Issues](https://github.com/NVIDIA-Omniverse/kit-app-template/issues)
 
 ---
 
-## 📝 License
+## License
 
 This project is licensed under the **Apache License 2.0**. See [LICENSE](LICENSE) for details.
 
@@ -313,7 +313,7 @@ Portions of this software are governed by the NVIDIA Omniverse EULA. See [PRODUC
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **NVIDIA Omniverse Team** - Kit SDK and platform
 - **OpenStreetMap Contributors** - Building and road data
@@ -322,7 +322,7 @@ Portions of this software are governed by the NVIDIA Omniverse EULA. See [PRODUC
 
 ---
 
-## 📧 Contact & Support
+## Contact & Support
 
 - **Issues**: [GitHub Issues](https://github.com/NVIDIA-Omniverse/kit-app-template/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/NVIDIA-Omniverse/kit-app-template/discussions)
@@ -330,7 +330,7 @@ Portions of this software are governed by the NVIDIA Omniverse EULA. See [PRODUC
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 ### Phase 3 (Planned)
 - [ ] Multi-building analysis (entire city block)
@@ -350,6 +350,6 @@ See [GitHub Projects](https://github.com/NVIDIA-Omniverse/kit-app-template/proje
 ---
 
 <p align="center">
-  Built with ❤️ using <strong>NVIDIA Omniverse</strong><br>
+  Built with NVIDIA Omniverse<br>
   <a href="https://www.nvidia.com/en-us/omniverse/">Learn More About Omniverse</a>
 </p>

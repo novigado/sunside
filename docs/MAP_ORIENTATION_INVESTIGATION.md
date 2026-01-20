@@ -44,8 +44,8 @@ x = lon_diff * meters_per_lon_degree  # Longitude -> X (east-west)
    lon_diff = 12.26 - 12.263287 = -0.003287° (slightly west)
 
    # Should give:
-   z = +0.000746 * 111000 = +82.8m (positive Z = north) ✓
-   x = -0.003287 * 111000 * cos(57.749°) = -193.6m (negative X = west) ✓
+   z = +0.000746 * 111000 = +82.8m (positive Z = north) 
+   x = -0.003287 * 111000 * cos(57.749°) = -193.6m (negative X = west) 
    ```
 
 2. **Check OSM polygon order**:
@@ -118,11 +118,11 @@ z = lon_diff * meters_per_lon_degree  # lon → z
 
 ## Action Items
 
-1. ✅ Document the issue
-2. ✅ Launch application with Gothenburg coordinates
-3. ✅ Visually inspect map orientation
-4. ✅ Identify problem: Map is flipped left-right (mirrored)
-5. ✅ Apply fix: Negate X coordinate
+1.  Document the issue
+2.  Launch application with Gothenburg coordinates
+3.  Visually inspect map orientation
+4.  Identify problem: Map is flipped left-right (mirrored)
+5.  Apply fix: Negate X coordinate
 6. ⬜ Test in application to verify fix
 7. ⬜ Test with multiple locations to verify
 

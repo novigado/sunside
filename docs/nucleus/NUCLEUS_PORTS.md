@@ -6,24 +6,24 @@ Based on your `nucleus-stack-no-ssl.yml` configuration, here are all the ports u
 
 | Port | Service | Purpose | Status |
 |------|---------|---------|--------|
-| **3333** | Discovery | Service discovery - **MOST CRITICAL** | ❌ NOT OPEN |
-| 3009 | API | Main API endpoint | ✅ Open |
-| 3100 | Auth | Authentication service | ✅ Open |
-| 3030 | LFT | Large File Transfer | ❌ NOT OPEN |
+| **3333** | Discovery | Service discovery - **MOST CRITICAL** |  NOT OPEN |
+| 3009 | API | Main API endpoint |  Open |
+| 3100 | Auth | Authentication service |  Open |
+| 3030 | LFT | Large File Transfer |  NOT OPEN |
 
 ## Secondary Ports (Recommended)
 
 | Port | Service | Purpose | Status |
 |------|---------|---------|--------|
-| 3180/80 | Web UI | Navigator web interface | ✅ Open |
-| 3400 | Search | Search functionality | ❌ NOT OPEN |
-| 3020 | Tagging | Asset tagging | ❌ NOT OPEN |
+| 3180/80 | Web UI | Navigator web interface |  Open |
+| 3400 | Search | Search functionality |  NOT OPEN |
+| 3020 | Tagging | Asset tagging |  NOT OPEN |
 
 ## Optional Ports
 
 | Port | Service | Purpose | Status |
 |------|---------|---------|--------|
-| 8080 | Metrics | Prometheus metrics | ❌ NOT OPEN |
+| 8080 | Metrics | Prometheus metrics |  NOT OPEN |
 | 5000 | Meta Dump | Metadata dump (commented out) | N/A |
 
 ## Immediate Action Required

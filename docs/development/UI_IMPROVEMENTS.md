@@ -17,7 +17,7 @@ This created a poor user experience where users were unsure if the system was wo
 
 ### 1. Immediate Button Feedback
 - **Button disabled** immediately when clicked to prevent multiple clicks
-- **Button text changes** to "⏳ Loading Map Data..." to show active state
+- **Button text changes** to " Loading Map Data..." to show active state
 - **Button color changes** to gray (0xFF757575) during loading to indicate processing
 - **Button restored** to original blue color (0xFF2196F3) when loading completes (success or error)
 
@@ -29,8 +29,8 @@ This created a poor user experience where users were unsure if the system was wo
   - Creating ground plane
   - Creating roads
   - Creating buildings
-- **Success message**: Clear ✅ indicator with count of loaded elements
-- **Error messages**: Clear ❌ indicator with specific error details
+- **Success message**: Clear  indicator with count of loaded elements
+- **Error messages**: Clear  indicator with specific error details
 
 ### 3. Improved Logging
 Enhanced console logging with clear visual markers:
@@ -40,28 +40,28 @@ Enhanced console logging with clear visual markers:
 [Shadow Analyzer] Button pressed - starting map load process
 [Shadow Analyzer] Target coordinates: (40.7128, -74.0060)
 [Shadow Analyzer] Fetching data from OpenStreetMap API...
-[Shadow Analyzer] ✓ Cache cleared
+[Shadow Analyzer]  Cache cleared
 [Shadow Analyzer] → Querying OpenStreetMap for area within 0.5km radius...
-[Shadow Analyzer] ✓ OpenStreetMap data received
-[Shadow Analyzer] ✓ Found 245 buildings and 87 roads
+[Shadow Analyzer]  OpenStreetMap data received
+[Shadow Analyzer]  Found 245 buildings and 87 roads
 [Shadow Analyzer] → Creating geometry converter...
 [Shadow Analyzer] → Clearing existing scene elements...
-[Shadow Analyzer] ✓ Old geometry cleared
+[Shadow Analyzer]  Old geometry cleared
 [Shadow Analyzer] → Creating ground plane (1km x 1km)...
-[Shadow Analyzer] ✓ Ground plane created
+[Shadow Analyzer]  Ground plane created
 [Shadow Analyzer] → Creating 87 roads...
-[Shadow Analyzer] ✓ 87 roads created
+[Shadow Analyzer]  87 roads created
 [Shadow Analyzer] → Creating 245 buildings...
-[Shadow Analyzer] ✓ 245 buildings created
+[Shadow Analyzer]  245 buildings created
 [Shadow Analyzer] ===== MAP LOAD COMPLETE ===== Successfully loaded 245 buildings, 87 roads
 ```
 
 ### 4. Visual Indicators
 - **Blue button**: Ready state (default - 0xFF2196F3)
 - **Gray button**: Loading/processing state (0xFF757575)
-- **Yellow (⏳)**: Loading in progress (status label)
-- **Green (✅)**: Success (status label)
-- **Red (❌)**: Error (status label)
+- **Yellow ()**: Loading in progress (status label)
+- **Green ()**: Success (status label)
+- **Red ()**: Error (status label)
 - Emoji indicators for quick visual recognition
 
 ## Code Changes
@@ -76,7 +76,7 @@ Enhanced console logging with clear visual markers:
    - Update button text to show loading state
    - Provide stage-by-stage status updates
    - Re-enable button on completion or error
-   - Enhanced logging with visual markers (✓, →, =====)
+   - Enhanced logging with visual markers (, →, =====)
 
 ## User Experience Improvements
 
@@ -88,7 +88,7 @@ Enhanced console logging with clear visual markers:
 ### After
 - Click button → **Immediate visual feedback:**
   - Button turns gray
-  - Text changes to "⏳ Loading Map Data..."
+  - Text changes to " Loading Map Data..."
   - Button becomes disabled
 - Status label updates through each stage
 - Console shows detailed progress

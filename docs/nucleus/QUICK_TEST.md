@@ -4,9 +4,9 @@
 The Nucleus extension is **configured and built**, but you need to **launch the app** to see it in action.
 
 ## Current Status
-✅ Nucleus extension registered and configured
-✅ Build successful
-⚠️ App not currently running (last log from 18:30:34, build phase)
+ Nucleus extension registered and configured
+ Build successful
+️ App not currently running (last log from 18:30:34, build phase)
 
 ## How to Launch & Test
 
@@ -27,7 +27,7 @@ The Nucleus extension is **configured and built**, but you need to **launch the 
 
 Once the app launches, you should see:
 - A new window titled **"Nucleus Status"**
-- Connection status: ✅ Connected OR ⚠️ Not Connected
+- Connection status:  Connected OR ️ Not Connected
 - Server URL: `omniverse://localhost`
 - Project path: `/Projects/CityData`
 - A blue "Test Connection" button
@@ -38,14 +38,14 @@ In the terminal where the app is running, search for these messages:
 
 **If Nucleus IS running:**
 ```
-[city.shadow_analyzer.nucleus] ✅ Successfully connected to Nucleus
+[city.shadow_analyzer.nucleus]  Successfully connected to Nucleus
 [city.shadow_analyzer.nucleus] Server: omniverse://localhost
 [city.shadow_analyzer.nucleus] Project Path: /Projects/CityData
 ```
 
 **If Nucleus is NOT running:**
 ```
-[city.shadow_analyzer.nucleus] ⚠️ No Nucleus connection available - running in local mode
+[city.shadow_analyzer.nucleus] ️ No Nucleus connection available - running in local mode
 ```
 
 ## Troubleshooting
@@ -82,13 +82,13 @@ In the terminal where the app is running, search for these messages:
 ┌─────────────────────────────────────┐
 │     Nucleus Integration Status      │
 ├─────────────────────────────────────┤
-│ Connection:     ✅ Connected         │
+│ Connection:      Connected         │
 │ Server:         omniverse://localhost│
 │ Project Path:   /Projects/CityData   │
 │                                      │
 │  [      Test Connection      ]       │
 │                                      │
-│ ✅ Connection successful!            │
+│  Connection successful!            │
 └─────────────────────────────────────┘
 ```
 
@@ -97,13 +97,13 @@ In the terminal where the app is running, search for these messages:
 ┌─────────────────────────────────────┐
 │     Nucleus Integration Status      │
 ├─────────────────────────────────────┤
-│ Connection:     ⚠️ Not Connected     │
+│ Connection:     ️ Not Connected     │
 │ Server:         omniverse://localhost│
 │ Project Path:   /Projects/CityData   │
 │                                      │
 │  [      Test Connection      ]       │
 │                                      │
-│ ⚠️ Connection failed. Is Nucleus     │
+│ ️ Connection failed. Is Nucleus     │
 │    running?                          │
 └─────────────────────────────────────┘
 ```
@@ -111,7 +111,7 @@ In the terminal where the app is running, search for these messages:
 ## Next Steps After Confirming
 
 Once you see the window and verify connection status:
-1. If connected → Phase 1 is complete! ✅
+1. If connected → Phase 1 is complete! 
 2. If not connected → Follow NUCLEUS_TESTING_GUIDE.md to start Nucleus
 3. Ready for Phase 2 → Integrate caching into building loader
 

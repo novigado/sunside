@@ -1,6 +1,6 @@
 ﻿# Ray Casting Point Query System - User Guide
 
-## 🎯 New Feature: Point Query System
+##  New Feature: Point Query System
 
 The City Shadow Analyzer now includes a ray casting system that allows you to click anywhere in the 3D scene and determine if that point is in sunlight or shadow!
 
@@ -15,7 +15,7 @@ The City Shadow Analyzer now includes a ray casting system that allows you to cl
 
 ### Step 2: Activate Query Mode
 1. Click the **"Activate Query Mode"** button
-2. The button will turn green and say "🎯 Query Mode ACTIVE"
+2. The button will turn green and say " Query Mode ACTIVE"
 3. Your cursor is now ready to query points
 
 ### Step 3: Query Points
@@ -32,17 +32,17 @@ The City Shadow Analyzer now includes a ray casting system that allows you to cl
 
 The **"Point Query Results"** panel will show:
 
-**☀️ SUNLIGHT** (Yellow/Orange)
+**️ SUNLIGHT** (Yellow/Orange)
 - No obstruction between point and sun
 - Direct sunlight available
 - Shows sun position (azimuth, elevation)
 
-**🌑 SHADOW** (Purple)
+** SHADOW** (Purple)
 - Building blocks the sun
 - Shows which building is blocking
 - Shows distance to blocking object
 
-**🌙 NIGHT** (Blue)
+** NIGHT** (Blue)
 - Sun is below the horizon
 - No sunlight available regardless of buildings
 
@@ -174,4 +174,4 @@ To navigate and find good query points:
 
 ---
 
-**Enjoy testing your shadow analysis system!** 🌞🏙️
+**Enjoy testing your shadow analysis system!** ️

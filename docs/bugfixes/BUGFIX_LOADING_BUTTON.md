@@ -3,13 +3,13 @@
 ## Issue Description
 
 **Reported Problem:**
-After loading buildings and terrain using the "Load Map with Terrain & Buildings" button, the button would get stuck displaying "⏳ Loading Map..." and remain disabled/inactive, preventing users from loading additional maps.
+After loading buildings and terrain using the "Load Map with Terrain & Buildings" button, the button would get stuck displaying " Loading Map..." and remain disabled/inactive, preventing users from loading additional maps.
 
 **Symptoms:**
-- ✗ Button text stuck as "⏳ Loading Map..." instead of returning to "Load Map with Terrain & Buildings"
-- ✗ Button remained gray and disabled after loading completed successfully
-- ✗ Users could not load a new map without restarting the application
-- ✗ The button never re-enabled even though the map data loaded successfully
+-  Button text stuck as " Loading Map..." instead of returning to "Load Map with Terrain & Buildings"
+-  Button remained gray and disabled after loading completed successfully
+-  Users could not load a new map without restarting the application
+-  The button never re-enabled even though the map data loaded successfully
 
 ## Root Cause Analysis
 
@@ -26,13 +26,13 @@ The issue was in the `_load_map_with_terrain()` function in `extension.py`:
 # BEFORE (buggy code):
 async def _do_load():
     self._load_map_button.enabled = False
-    self._load_map_button.text = "⏳ Loading Map..."
+    self._load_map_button.text = " Loading Map..."
 
     # These functions restored their OWN buttons, not the combined button!
     self._load_buildings_sync()
     self._load_terrain_sync()
 
-    # ❌ MISSING: No call to restore _load_map_button
+    #  MISSING: No call to restore _load_map_button
 ```
 
 ## Solution Implemented
@@ -61,14 +61,14 @@ def _load_terrain_sync(self, from_combined_button=False):
 async def _do_load():
     # Disable combined button
     self._load_map_button.enabled = False
-    self._load_map_button.text = "⏳ Loading Map..."
+    self._load_map_button.text = " Loading Map..."
 
     try:
         # Pass from_combined_button=True to suppress individual restoration
         self._load_buildings_sync(from_combined_button=True)
         self._load_terrain_sync(from_combined_button=True)
 
-        # ✅ FIXED: Restore the combined button
+        #  FIXED: Restore the combined button
         self._restore_map_button()
 
     except Exception as e:
@@ -100,7 +100,7 @@ if hasattr(self, '_load_buildings_button') and not from_combined_button:
 ### Test Case 1: Normal Load
 1. Enter valid coordinates (e.g., New York: 40.7128, -74.0060)
 2. Click "Load Map with Terrain & Buildings"
-3. **Verify**: Button shows "⏳ Loading Map..." and is gray/disabled
+3. **Verify**: Button shows " Loading Map..." and is gray/disabled
 4. Wait for loading to complete
 5. **Verify**: Button returns to "Load Map with Terrain & Buildings" and orange color
 6. **Verify**: Button is enabled and clickable
@@ -127,12 +127,12 @@ if hasattr(self, '_load_buildings_button') and not from_combined_button:
 
 ## Expected Behavior After Fix
 
-✅ Combined button disables during load
-✅ Combined button shows loading state
-✅ Combined button restores after success
-✅ Combined button restores after error
-✅ Button is re-enabled for subsequent loads
-✅ Individual buttons still work independently
+ Combined button disables during load
+ Combined button shows loading state
+ Combined button restores after success
+ Combined button restores after error
+ Button is re-enabled for subsequent loads
+ Individual buttons still work independently
 
 ## Technical Details
 
@@ -148,4 +148,4 @@ if hasattr(self, '_load_buildings_button') and not from_combined_button:
 
 ## Status
 
-✅ **FIXED** - Button now properly restores to enabled state after loading completes or errors
+ **FIXED** - Button now properly restores to enabled state after loading completes or errors
