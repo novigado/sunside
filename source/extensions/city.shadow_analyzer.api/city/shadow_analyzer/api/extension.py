@@ -57,22 +57,13 @@ class CityAnalyzerAPIExtension(omni.ext.IExt):
 
     def _on_update(self, event):
         """Called every frame on the main thread. Process queued USD operations here."""
-        self._update_counter += 1
-
-        # Log every 300 frames (roughly every 5 seconds at 60fps) to confirm update loop is working
-        if self._update_counter % 300 == 0:
-            print(f"[city.shadow_analyzer.api] Update loop is running (frame {self._update_counter})")
-            carb.log_info(f"[city.shadow_analyzer.api] Update loop is running (frame {self._update_counter})")
-
         if self._api_server:
             self._api_server.process_main_thread_queue()
 
     def _run_server(self):
         """Run the API server in a separate thread."""
         try:
-            carb.log_info("[city.shadow_analyzer.api] _run_server thread started, calling api_server.run()")
             self._api_server.run()
-            carb.log_info("[city.shadow_analyzer.api] api_server.run() returned")
         except Exception as e:
             carb.log_error(f"[city.shadow_analyzer.api] Server error: {e}")
             import traceback

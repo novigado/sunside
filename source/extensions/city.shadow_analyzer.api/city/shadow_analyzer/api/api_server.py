@@ -386,7 +386,6 @@ class ShadowAnalyzerAPI:
 
     def run(self):
         """Run the API server in a background thread."""
-        carb.log_info(f"[ShadowAnalyzerAPI] run() method called")
         carb.log_info(f"[ShadowAnalyzerAPI] Starting server on {self.host}:{self.port}")
         
         try:
@@ -400,29 +399,23 @@ class ShadowAnalyzerAPI:
                 # Disable lifespan to avoid asyncio conflicts
                 lifespan="off"
             )
-            carb.log_info("[ShadowAnalyzerAPI] uvicorn.Config created")
             self._server = uvicorn.Server(config)
-            carb.log_info("[ShadowAnalyzerAPI] uvicorn.Server instance created")
 
             # Run server in a separate thread to avoid asyncio event loop conflicts
             def run_server():
                 """Thread target to run the uvicorn server."""
-                carb.log_info("[ShadowAnalyzerAPI] Inside run_server() thread function")
                 import asyncio
                 # Create a new event loop for this thread
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-                carb.log_info("[ShadowAnalyzerAPI] Event loop created, calling server.serve()")
                 try:
                     loop.run_until_complete(self._server.serve())
-                    carb.log_info("[ShadowAnalyzerAPI] server.serve() completed")
                 except Exception as e:
                     carb.log_error(f"[ShadowAnalyzerAPI] Error in server.serve(): {e}")
                     import traceback
                     carb.log_error(f"[ShadowAnalyzerAPI] Traceback: {traceback.format_exc()}")
                 finally:
                     loop.close()
-                    carb.log_info("[ShadowAnalyzerAPI] Event loop closed")
 
             server_thread = threading.Thread(target=run_server, daemon=True, name="APIServerThread")
             server_thread.start()
