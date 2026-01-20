@@ -1860,7 +1860,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 reference_lat,
                 reference_lon,
                 radius_m=500.0,
-                grid_resolution=50  # Increased from 20 to 50 for better coverage (50x50 = 2500 cells)
+                grid_resolution=30  # Reduced from 50 to 30 (30x30 = 900 points, batched into 9 requests)
             )
 
             if result is None:
