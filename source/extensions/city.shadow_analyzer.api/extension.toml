@@ -34,12 +34,12 @@ icon = "data/icon.png"
 name = "city.shadow_analyzer.api"
 
 [[python.pipapi]]
-requirements = [
-    "fastapi==0.128.0",
-    "uvicorn==0.40.0",
-    "pydantic==2.12.5"
-]
 use_online_index = true
+
+[python.pipapi.requirements]
+"fastapi" = "0.128.0"
+"uvicorn" = "0.40.0"
+"pydantic" = "2.12.5"
 
 [[test]]
 dependencies = [
