@@ -1978,7 +1978,7 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
         carb.log_info(f"[Shadow Analyzer] ✅ Scene creation complete")
 
     def _load_map_with_terrain(self):
-        # ...existing code...
+        """Load map with terrain and buildings, using Nucleus caching."""
         # Immediate status update
         self._map_status_label.text = "⏳ Starting to load map data..."
 
@@ -1993,11 +1993,59 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
             await omni.kit.app.get_app().next_update_async()
 
             try:
-                # NEW APPROACH: Load terrain FIRST, then create buildings at terrain elevation
-                # This ensures perfect alignment between terrain and buildings/roads
+                # Get current location
+                latitude = self._lat_field.model.get_value_as_float()
+                longitude = self._lon_field.model.get_value_as_float()
 
-                # STEP 1: Load OSM data and calculate reference point
-                carb.log_info("[Shadow Analyzer] === STEP 1: Loading OSM data ===")
+                # ========== STEP 0: Check Nucleus Cache ==========
+                if self._nucleus_cache:
+                    carb.log_info("[Shadow Analyzer] 🔍 ========== CHECKING NUCLEUS CACHE ==========")
+                    carb.log_info(f"[Shadow Analyzer] 🔍 Looking for: ({latitude:.6f}, {longitude:.6f})")
+                    self._map_status_label.text = "🔍 Checking Nucleus cache..."
+
+                    success, cached_stage, metadata = self._nucleus_cache.load_usd_from_cache(
+                        latitude, longitude, radius=0.5
+                    )
+
+                    if success and cached_stage:
+                        carb.log_info("[Shadow Analyzer] ✅ ========== CACHE HIT! ==========")
+                        if metadata:
+                            carb.log_info(f"[Shadow Analyzer] ✅ Cached at: {metadata.get('saved_at', 'unknown')}")
+                            carb.log_info(f"[Shadow Analyzer] ✅ Buildings: {metadata.get('building_count', 0)}")
+                        carb.log_info("[Shadow Analyzer] ✅ Loading from Nucleus cache...")
+
+                        # Get stage and clear existing scene
+                        stage = omni.usd.get_context().get_stage()
+                        if stage:
+                            for path in ["/World/Buildings", "/World/Roads", "/World/Ground", "/World/Terrain"]:
+                                prim = stage.GetPrimAtPath(path)
+                                if prim:
+                                    stage.RemovePrim(path)
+
+                            # Copy cached geometry to scene
+                            self._copy_cached_scene_to_stage(cached_stage, stage)
+
+                            # Update status
+                            if metadata:
+                                building_count = metadata.get('building_count', 0)
+                                status_text = f"✓ Loaded from cache: {building_count} buildings"
+                            else:
+                                status_text = "✓ Loaded from cache"
+
+                            self._map_status_label.text = status_text
+                            self._map_status_label.style = {"font_size": 12, "color": 0xFF4CAF50}  # Green
+                            carb.log_info("[Shadow Analyzer] ✅ Successfully loaded from Nucleus cache!")
+
+                        self._restore_map_button()
+                        return
+                    else:
+                        carb.log_info("[Shadow Analyzer] ⚠️ ========== CACHE MISS ==========")
+                        carb.log_info("[Shadow Analyzer] ⚠️ Will load from OpenStreetMap and save to cache")
+                else:
+                    carb.log_warn("[Shadow Analyzer] ⚠️ ========== NUCLEUS CACHE NOT INITIALIZED ==========")
+
+                # ========== STEP 1: Load OSM data and calculate reference point ==========
+                carb.log_info("[Shadow Analyzer] 🌍 === STEP 1: Loading OSM data ===")
                 buildings_data, roads_data, reference_lat, reference_lon = self._load_osm_data_and_calculate_reference()
 
                 if not buildings_data and not roads_data:
@@ -2008,19 +2056,61 @@ class CityAnalyzerUIExtension(omni.ext.IExt):
                 # Wait for UI update
                 await omni.kit.app.get_app().next_update_async()
 
-                # STEP 2: Load terrain with calculated reference point
+                # ========== STEP 2: Load terrain with calculated reference point ==========
                 carb.log_info(f"[Shadow Analyzer] === STEP 2: Loading terrain at reference ({reference_lat:.6f}, {reference_lon:.6f}) ===")
                 terrain_loaded = self._load_terrain_at_reference(reference_lat, reference_lon, from_combined_button=True)
 
                 # Wait for UI update
                 await omni.kit.app.get_app().next_update_async()
 
-                # STEP 3: Create buildings and roads using terrain elevation
+                # ========== STEP 3: Create buildings and roads using terrain elevation ==========
                 carb.log_info("[Shadow Analyzer] === STEP 3: Creating buildings and roads ===")
                 self._create_buildings_and_roads_with_terrain(
                     buildings_data, roads_data, reference_lat, reference_lon,
                     has_terrain=terrain_loaded, from_combined_button=True
                 )
+
+                # ========== STEP 4: Save to Nucleus cache ==========
+                if self._nucleus_cache:
+                    carb.log_info("[Shadow Analyzer] 💾 ========== SAVING TO NUCLEUS CACHE ==========")
+                    self._map_status_label.text = "💾 Saving to Nucleus cache..."
+
+                    try:
+                        stage = omni.usd.get_context().get_stage()
+                        if stage:
+                            # Create a temporary stage with just the scene geometry
+                            temp_stage = self._export_scene_to_temp_stage(stage, buildings_data, roads_data)
+
+                            # Prepare metadata
+                            metadata = {
+                                'building_count': len(buildings_data) if buildings_data else 0,
+                                'road_count': len(roads_data) if roads_data else 0,
+                                'bounds': {
+                                    'center_lat': latitude,
+                                    'center_lon': longitude,
+                                    'radius_km': 0.5
+                                },
+                                'data_source': 'OpenStreetMap'
+                            }
+
+                            # Save to Nucleus
+                            success, nucleus_path = self._nucleus_cache.save_to_cache(
+                                latitude, longitude, 0.5, temp_stage, metadata
+                            )
+
+                            if success:
+                                carb.log_info(f"[Shadow Analyzer] ✅ ========== SUCCESSFULLY SAVED TO NUCLEUS ==========")
+                                carb.log_info(f"[Shadow Analyzer] ✅ Path: {nucleus_path}")
+                            else:
+                                carb.log_warn(f"[Shadow Analyzer] ⚠️ ========== FAILED TO SAVE TO NUCLEUS ==========")
+
+                    except Exception as cache_error:
+                        carb.log_error(f"[Shadow Analyzer] ❌ ========== CACHE SAVE ERROR ==========")
+                        carb.log_error(f"[Shadow Analyzer] ❌ Error: {cache_error}")
+                        import traceback
+                        carb.log_error(traceback.format_exc())
+                else:
+                    carb.log_warn("[Shadow Analyzer] ⚠️ ========== NUCLEUS CACHE NOT AVAILABLE ==========")
 
                 # Restore the combined button after all operations complete
                 self._restore_map_button()

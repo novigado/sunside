@@ -47,7 +47,9 @@ class NucleusManager:
         # Set up token-based authentication
         self._setup_authentication()
 
+        # Check connection during initialization
         self._connected = False
+        self.check_connection()
 
     def _setup_authentication(self):
         """Set up authentication for Nucleus connection."""
@@ -98,8 +100,13 @@ class NucleusManager:
 
             if self._connected:
                 carb.log_info(f"[NucleusManager] Successfully connected to {self._nucleus_server}")
-                # Ensure project path exists
-                self._ensure_directory(self._base_path)
+                # Ensure project path exists - check if it succeeds!
+                if not self._ensure_directory(self._base_path):
+                    carb.log_error(f"[NucleusManager] Failed to create/access project directory: {self._base_path}")
+                    carb.log_error(f"[NucleusManager] Possible causes: no write permissions, authentication failed, or path is invalid")
+                    self._connected = False
+                    return False
+                carb.log_info(f"[NucleusManager] Project directory verified: {self._base_path}")
             else:
                 carb.log_warn(f"[NucleusManager] Cannot connect to {self._nucleus_server}: {result}")
 

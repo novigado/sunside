@@ -3,7 +3,7 @@
 **Last Updated**: January 19, 2026
 **Version**: 0.2.0
 **Audience**: New developers joining the project
-**Branch**: feature/terrain-elevation-integration
+**Branch**: main (with bugfix/nucleus-connection-not-initialized pending)
 
 ---
 
@@ -1108,14 +1108,21 @@ class CityAnalyzerAPIExtension(omni.ext.IExt):
 
 ### 6. Terrain Integration Issue (CURRENT BUG!)
 
-**Status**: Terrain loading temporarily disabled
-**Problem**: Buildings appear buried/floating when terrain elevation != 0
-**Current Workaround**: Load buildings on flat Y=0 ground plane
-**In Progress**: Branch `feature/terrain-elevation-integration` fixing this
+**Status**: ~~Terrain loading temporarily disabled~~ FIXED on feature/terrain-elevation-integration
+**Problem**: ~~Buildings appear buried/floating when terrain elevation != 0~~ RESOLVED
+**Current Status**: Merged to main, terrain integration working correctly
 
-**Root Cause**: Buildings created with base at Y=0, then adjusted for terrain after creation. Timing and elevation query issues cause misalignment.
+### 7. Nucleus Caching Disabled (FIXED!)
 
-**Planned Fix**: Load terrain FIRST, then create buildings at correct elevation from the start.
+**Status**: FIXED on bugfix/nucleus-connection-not-initialized
+**Problem**: NucleusManager never called `check_connection()` during initialization
+**Impact**: `self._connected` remained False, all cache operations silently failed
+**Symptoms**:
+- All building loads took 30-70s (no cache hits)
+- Nothing saved to Nucleus server
+- Logs showed "Not connected to Nucleus" warnings
+**Root Cause**: Constructor set `self._connected = False` but never called `check_connection()` to actually test and establish the connection
+**Fix**: Added `self.check_connection()` call at end of `__init__()` method
 
 ---
 
@@ -1329,7 +1336,7 @@ carb.log_error("[YourExtension] Error message")
 
 ### What Needs Work
 
-⚠️ **Terrain integration** - Currently disabled due to elevation bug
+⚠️ **~~Nucleus caching broken~~** - FIXED! Was not connecting during init
 ⚠️ **OSM API speed** - Slow public API (30-70s queries)
 ⚠️ **Shadow query performance** - CPU ray casting bottleneck
 ⚠️ **Cache invalidation** - No automatic expiry yet
