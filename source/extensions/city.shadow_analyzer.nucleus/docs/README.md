@@ -1,4 +1,4 @@
-# City Shadow Analyzer - Nucleus Integration
+﻿# City Shadow Analyzer - Nucleus Integration
 
 This extension integrates the City Shadow Analyzer with NVIDIA Omniverse Nucleus, enabling:
 

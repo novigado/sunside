@@ -1,4 +1,4 @@
-# Windows C++ Developer Configuration
+﻿# Windows C++ Developer Configuration
 
 ## Introduction
 

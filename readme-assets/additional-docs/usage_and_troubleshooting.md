@@ -1,4 +1,4 @@
-# Usage and Troubleshooting
+﻿# Usage and Troubleshooting
 
 This section provides high-level information and guidance related to using the Kit App Template repository, along with troubleshooting tips for common issues.
 

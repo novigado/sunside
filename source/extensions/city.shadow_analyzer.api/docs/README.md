@@ -1,4 +1,4 @@
-# City Shadow Analyzer REST API
+﻿# City Shadow Analyzer REST API
 
 REST API extension for the City Shadow Analyzer, providing HTTP endpoints for shadow analysis queries from smartphones and web applications.
 

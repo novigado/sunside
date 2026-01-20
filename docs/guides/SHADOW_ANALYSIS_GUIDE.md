@@ -1,4 +1,4 @@
-# City Shadow Analyzer - Quick Start Guide
+﻿# City Shadow Analyzer - Quick Start Guide
 
 ## Overview
 
@@ -6,14 +6,14 @@ The City Shadow Analyzer is an NVIDIA Omniverse Kit-based application that deter
 
 ## Current Features
 
-### ✅ Implemented
+###  Implemented
 - **Sun Position Calculation**: Accurate astronomical algorithms based on date, time, and GPS coordinates
 - **Visual Representation**: Real-time 3D visualization with RTX-rendered shadows
 - **Interactive UI**: Controls for location, time, and sun position updates
 - **Test Scene Generation**: Create simple city blocks for testing
 - **Time Control**: Use current time or set custom date/time
 
-### 🚧 Coming Soon
+###  Coming Soon
 - Point query system (click to check if location is in sun/shadow)
 - Real city data loading (OpenStreetMap integration)
 - REST API for remote queries
@@ -146,7 +146,7 @@ Expected: Sun nearly overhead (elevation close to 90°)
 
 ## Next Steps for Development
 
-### Phase 1: Enhanced Visualization ✅ (Current)
+### Phase 1: Enhanced Visualization  (Current)
 - Basic sun positioning
 - Simple test scenes
 - Visual shadow validation

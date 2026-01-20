@@ -1,4 +1,4 @@
-# Kit SDK Tooling Guide
+﻿# Kit SDK Tooling Guide
 
 This document provides an overview of the practical aspects of using the tooling provided in the `kit-app-template`. Intended for users with a basic familiarity with command-line operations, this guide offers typical usage patterns and recommendations for effective tool use. For a complete list of options for a given tool, use the help command: `./repo.sh [tool] -h` or `.\repo.bat [tool] -h`.
 

@@ -1,4 +1,4 @@
-# City Shadow Analyzer Tests 🧪
+﻿# City Shadow Analyzer Tests 
 
 This directory contains test suites for the City Shadow Analyzer application.
 

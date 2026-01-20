@@ -1,4 +1,4 @@
-# Nucleus Cache Validation Guide
+﻿# Nucleus Cache Validation Guide
 
 This guide shows you how to validate that building and terrain data is being stored in your Nucleus server.
 
@@ -123,15 +123,15 @@ omni.client.set_authentication_message_box_callback(auth_callback)
 result, entries = omni.client.list(base_path)
 
 if result == omni.client.Result.OK:
-    print(f"✅ Connected to Nucleus: {nucleus_url}")
-    print(f"📁 Cache location: {base_path}\n")
+    print(f" Connected to Nucleus: {nucleus_url}")
+    print(f" Cache location: {base_path}\n")
 
     print(f"Found {len(entries)} cached cities:\n")
 
     for entry in entries:
         if entry.flags & omni.client.ItemFlags.IS_FOLDER:
             city_name = entry.relative_path
-            print(f"  📂 {city_name}")
+            print(f"   {city_name}")
 
             # List files in this city folder
             city_path = f"{base_path}/{city_name}"
@@ -154,7 +154,7 @@ if result == omni.client.Result.OK:
                         print(f"     • Buildings: {metadata.get('building_count', 0)}")
                 print()
 else:
-    print(f"❌ Failed to connect: {result}")
+    print(f" Failed to connect: {result}")
 ```
 
 ### Run it:
@@ -183,7 +183,7 @@ The Shadow Analyzer logs every cache operation.
 
 3. **Example log entries**:
    ```
-   [BuildingLoader] ✅ NUCLEUS CACHE HIT - Loading from: omniverse://nucleus.../city_37N_122W/buildings_abc123.usd
+   [BuildingLoader]  NUCLEUS CACHE HIT - Loading from: omniverse://nucleus.../city_37N_122W/buildings_abc123.usd
    [CityCacheManager] Cache HIT for (37.7749, -122.4194)
    [CityCacheManager] Contains 1523 buildings
    [CityCacheManager] Cached data from: 2026-01-16T22:45:00Z
@@ -207,7 +207,7 @@ The best way to validate caching is to test it!
 3. **Second Load (Cache Hit)**:
    - Load the **SAME** location again
    - Note the time it takes: **~2-5 seconds** ← **10-20x faster!**
-   - Check logs for: `"✅ NUCLEUS CACHE HIT"`
+   - Check logs for: `" NUCLEUS CACHE HIT"`
 
 4. **Verify in Nucleus Web Navigator**:
    - Browse to `/Projects/CityData/city_37N_122W/`
@@ -222,9 +222,9 @@ The best way to validate caching is to test it!
 **Current Status**: The caching code is wired up but not yet fully integrated.
 
 The BuildingLoader currently:
-- ✅ Checks if cache exists
-- ✅ Logs "NUCLEUS CACHE HIT" if found
-- ⚠️ But still falls back to OSM query (USD loading not complete)
+-  Checks if cache exists
+-  Logs "NUCLEUS CACHE HIT" if found
+- ️ But still falls back to OSM query (USD loading not complete)
 
 **What's needed**: Complete Task 1 integration to actually load USD from cache instead of falling back.
 

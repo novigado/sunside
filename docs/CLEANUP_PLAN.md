@@ -1,4 +1,4 @@
-# Project Cleanup Plan 🧹
+﻿# Project Cleanup Plan 
 
 **Branch**: `cleanup/documentation-and-unused-code`
 **Date**: January 17, 2026
@@ -46,14 +46,14 @@ Currently scattered across root directory, needs organization:
 In `source/apps/`, several template/example apps that are not part of City Shadow Analyzer:
 
 **Keep (Active):**
-- ✅ `city.shadow_analyzer.kit.kit` - Main application (desktop UI)
-- ✅ `city.shadow_analyzer.api_service.kit` - API service (headless, production)
+-  `city.shadow_analyzer.kit.kit` - Main application (desktop UI)
+-  `city.shadow_analyzer.api_service.kit` - API service (headless, production)
 
 **Remove (Unused/Duplicate):**
-- ❌ `my.sdg.app.kit` - Template app (NVIDIA example)
-- ❌ `my_company.my_editor.kit` - Template editor (NVIDIA example)
-- ❌ `city.shadow_analyzer.api.kit` - Empty file (never used)
-- ❌ `shadow_api_service.kit` - Duplicate of city.shadow_analyzer.api_service.kit
+-  `my.sdg.app.kit` - Template app (NVIDIA example)
+-  `my_company.my_editor.kit` - Template editor (NVIDIA example)
+-  `city.shadow_analyzer.api.kit` - Empty file (never used)
+-  `shadow_api_service.kit` - Duplicate of city.shadow_analyzer.api_service.kit
 
 ### Test Files (Root Level)
 - `test_api.py` - API tests
@@ -112,7 +112,7 @@ kit-app-template/
 
 ## Cleanup Tasks
 
-### Phase 1: Move Documentation ✅
+### Phase 1: Move Documentation 
 
 **User Guides → `docs/guides/`:**
 - [ ] Create consolidated `USER_GUIDE.md` from:
@@ -150,7 +150,7 @@ kit-app-template/
 - [ ] Keep NUCLEUS_PROJECT_LIBRARY.md
 - [ ] Keep NUCLEUS_PORTS.md
 
-### Phase 2: Remove Unused Code 🗑️
+### Phase 2: Remove Unused Code ️
 
 **Remove Template Apps:**
 - [ ] Delete `source/apps/my.sdg.app.kit` (NVIDIA template)
@@ -166,7 +166,7 @@ kit-app-template/
 - [ ] Move `test_shadow_api.py` → `tests/`
 - [ ] Create `tests/README.md` with test instructions
 
-### Phase 3: Create Master Documentation 📚
+### Phase 3: Create Master Documentation 
 
 **Root README.md:**
 - [ ] Update with project overview
@@ -185,14 +185,14 @@ kit-app-template/
 - [ ] Document Phase 2 completion
 - [ ] Add caching feature notes
 
-### Phase 4: Template Cleanup 🧩
+### Phase 4: Template Cleanup 
 
 **Check Templates Directory:**
 - [ ] Review `templates/` for unused templates
 - [ ] Keep only templates used by City Shadow Analyzer
 - [ ] Document what each template is for
 
-### Phase 5: Final Cleanup 🎯
+### Phase 5: Final Cleanup 
 
 - [ ] Remove deprecated documentation files
 - [ ] Update all cross-references in docs
@@ -206,12 +206,12 @@ kit-app-template/
 
 After cleanup, the project should have:
 
-- ✅ **Clear Documentation Structure**: Easy to navigate docs/ folder
-- ✅ **No Duplicate Documentation**: Single source of truth for each topic
-- ✅ **No Unused Code**: Only active applications remain
-- ✅ **Organized Tests**: All tests in tests/ directory
-- ✅ **Updated README**: Professional, comprehensive overview
-- ✅ **Easy Onboarding**: New users can find what they need quickly
+-  **Clear Documentation Structure**: Easy to navigate docs/ folder
+-  **No Duplicate Documentation**: Single source of truth for each topic
+-  **No Unused Code**: Only active applications remain
+-  **Organized Tests**: All tests in tests/ directory
+-  **Updated README**: Professional, comprehensive overview
+-  **Easy Onboarding**: New users can find what they need quickly
 
 ---
 
@@ -243,4 +243,4 @@ test_*.py → tests/test_*.py
 
 ---
 
-**Status**: 📋 Planning Complete - Ready to Execute
+**Status**:  Planning Complete - Ready to Execute

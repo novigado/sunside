@@ -1,4 +1,4 @@
-# City Shadow Analyzer - UI Extension
+﻿# City Shadow Analyzer - UI Extension
 
 This extension provides the user interface for the City Shadow Analyzer application.
 

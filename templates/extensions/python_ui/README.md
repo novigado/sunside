@@ -1,4 +1,4 @@
-# Python UI Extension Template
+﻿# Python UI Extension Template
 
 <p align="center">
   <img src="../../../readme-assets/python_ui_extension_template.jpg" width="50%" />

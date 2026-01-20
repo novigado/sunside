@@ -1,4 +1,4 @@
-# USD Explorer App Template
+﻿# USD Explorer App Template
 
 ![USD Explorer Hero Image](../../../readme-assets/usd_explorer.jpg)
 

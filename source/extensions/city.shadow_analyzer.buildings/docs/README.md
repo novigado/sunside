@@ -1,4 +1,4 @@
-# City Shadow Analyzer - Buildings Extension
+﻿# City Shadow Analyzer - Buildings Extension
 
 This extension loads real building data from OpenStreetMap and converts it to 3D geometry for shadow analysis.
 

@@ -1,4 +1,4 @@
-# Streaming Configuration Layers
+﻿# Streaming Configuration Layers
 
 These `.kit` files, known as `ApplicationLayerTemplates`, are used to define additional functionality added to the base application.
 

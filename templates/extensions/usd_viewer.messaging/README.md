@@ -1,4 +1,4 @@
-# USD Viewer Messaging Extension Template
+﻿# USD Viewer Messaging Extension Template
 
 ![USD Viewer Hero Image](../../../readme-assets/usd_viewer.jpg)
 

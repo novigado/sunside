@@ -1,4 +1,4 @@
-# Nucleus Project Library Feature
+﻿# Nucleus Project Library Feature
 
 ## Executive Summary
 
@@ -37,10 +37,10 @@ Store OpenStreetMap building geometry on Nucleus server:
 - **Metadata**: Bounds, building count, terrain data, last updated
 - **Smart Loading**: Check Nucleus before fetching from OSM
 - **Benefits**:
-  - ✅ 10x faster loading (local read vs API call)
-  - ✅ Works offline (once cached)
-  - ✅ No API rate limits
-  - ✅ Shared across team
+  -  10x faster loading (local read vs API call)
+  -  Works offline (once cached)
+  -  No API rate limits
+  -  Shared across team
 
 #### 2. **Project-Based Analysis Storage**
 Organize work into projects with persistent results:
@@ -51,9 +51,9 @@ Organize work into projects with persistent results:
   - `scenarios/alternative_design.usd` - Different design
   - `results/shadow_analysis_2026-01-14.usd` - Timestamped results
 - **Benefits**:
-  - ✅ Compare multiple design scenarios
-  - ✅ Review analysis history
-  - ✅ Share with stakeholders via Nucleus URL
+  -  Compare multiple design scenarios
+  -  Review analysis history
+  -  Share with stakeholders via Nucleus URL
 
 #### 3. **Collaborative Workflows**
 Enable team collaboration on urban planning:
@@ -62,9 +62,9 @@ Enable team collaboration on urban planning:
 - **Version History**: Track who changed what and when
 - **Access Control**: Read-only for reviewers, edit for planners
 - **Benefits**:
-  - ✅ Real-time collaboration
-  - ✅ Institutional knowledge preservation
-  - ✅ Regulatory compliance (audit trail)
+  -  Real-time collaboration
+  -  Institutional knowledge preservation
+  -  Regulatory compliance (audit trail)
 
 #### 4. **Project Browser UI**
 New UI panel for managing Nucleus projects:
@@ -143,7 +143,7 @@ New "Projects" panel in `city.shadow_analyzer.ui`:
 **Goal**: Basic read/write to Nucleus
 
 **Tasks**:
-1. ✅ Create feature branch
+1.  Create feature branch
 2. ⬜ Create `city.shadow_analyzer.nucleus` extension skeleton
 3. ⬜ Implement `NucleusClient` wrapper around `omni.client`
 4. ⬜ Add Nucleus connection UI (server URL input)
@@ -406,4 +406,4 @@ omniverse://nucleus-server/
 **Document Version**: 1.0
 **Created**: January 14, 2026
 **Author**: GitHub Copilot
-**Status**: 🔨 In Development
+**Status**:  In Development

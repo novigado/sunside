@@ -1,4 +1,4 @@
-# Service Setup Extension Template
+﻿# Service Setup Extension Template
 
 ![Kit Service Image](../../../readme-assets/kit_service.png)
 

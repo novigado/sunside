@@ -1,8 +1,8 @@
-# Bug Fix: Terrain API 504 Timeout
+﻿# Bug Fix: Terrain API 504 Timeout
 
 **Branch:** `bugfix/terrain-api-timeout`
 **Date:** 2025
-**Status:** ✅ FIXED
+**Status:**  FIXED
 
 ---
 
@@ -123,7 +123,7 @@ for batch_idx in range(num_batches):
 ### Failure Handling
 
 If a batch fails:
-1. **Log error**: `[TerrainLoader] ✗ Batch X/Y failed: {error}`
+1. **Log error**: `[TerrainLoader]  Batch X/Y failed: {error}`
 2. **Fill with zeros**: `elevation=0.0` for all points in failed batch
 3. **Continue processing**: Don't abort entire terrain load
 4. **Log success count**: Final message shows total points retrieved
@@ -146,11 +146,11 @@ ERROR: 504 Server Error: Gateway Time-out for url: https://api.open-elevation.co
 [TerrainLoader] Querying 900 elevation points...
 [TerrainLoader] Splitting into 9 batches of 100 points to avoid timeout...
 [TerrainLoader] Fetching batch 1/9 (100 points)...
-[TerrainLoader] ✓ Batch 1/9 complete (100 points)
+[TerrainLoader]  Batch 1/9 complete (100 points)
 [TerrainLoader] Fetching batch 2/9 (100 points)...
-[TerrainLoader] ✓ Batch 2/9 complete (100 points)
+[TerrainLoader]  Batch 2/9 complete (100 points)
 ...
-[TerrainLoader] ✓ All 9 batches complete (900 total points)
+[TerrainLoader]  All 9 batches complete (900 total points)
 [Shadow Analyzer] Terrain elevation range: 15.2m to 89.4m
 ```
 
@@ -246,10 +246,10 @@ This could reduce 9-batch load from ~4.5 minutes to ~1.5 minutes (3x speedup).
 **Result:** Terrain loading now works reliably in ~4.5 minutes
 
 The fix balances:
-- ✅ **Reliability**: No more 504 timeouts
-- ✅ **Quality**: 900 points still provides good terrain detail
-- ✅ **Performance**: Reasonable load time for first fetch
-- ✅ **User Experience**: Clear progress logging
-- ✅ **Graceful Degradation**: Partial failures don't break entire load
+-  **Reliability**: No more 504 timeouts
+-  **Quality**: 900 points still provides good terrain detail
+-  **Performance**: Reasonable load time for first fetch
+-  **User Experience**: Clear progress logging
+-  **Graceful Degradation**: Partial failures don't break entire load
 
 This fix completes the terrain integration feature and makes it production-ready.

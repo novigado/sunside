@@ -1,4 +1,4 @@
-# Terrain Elevation Integration Plan
+﻿# Terrain Elevation Integration Plan
 
 **Branch**: `feature/terrain-elevation-integration`
 **Created**: 2026-01-18
@@ -14,15 +14,15 @@ Re-enable terrain loading and fix the building/terrain elevation coordination is
 ## Current State
 
 ### What Works
-✅ GPS coordinate accuracy - markers appear at correct locations
-✅ Buildings and roads properly aligned (share same reference point)
-✅ Shadow analysis works correctly
-✅ Query markers visible with appropriate size (3m radius)
+ GPS coordinate accuracy - markers appear at correct locations
+ Buildings and roads properly aligned (share same reference point)
+ Shadow analysis works correctly
+ Query markers visible with appropriate size (3m radius)
 
 ### What's Disabled
-❌ Terrain loading temporarily commented out in `_load_map_with_terrain()`
-❌ Buildings load flat on Y=0 ground plane
-❌ No elevation data visualization
+ Terrain loading temporarily commented out in `_load_map_with_terrain()`
+ Buildings load flat on Y=0 ground plane
+ No elevation data visualization
 
 ## Problem Analysis
 
@@ -128,11 +128,11 @@ Buildings are created with base vertices at Y=0 (flat ground), but terrain mesh 
 
 ## Success Criteria
 
-1. ✅ Buildings appear to sit naturally on terrain surface
-2. ✅ No visible floating or burial artifacts
-3. ✅ Shadow analysis accounts for elevation differences
-4. ✅ Query markers appear at correct GPS location AND elevation
-5. ✅ Terrain visually enhances the scene (not distracting)
+1.  Buildings appear to sit naturally on terrain surface
+2.  No visible floating or burial artifacts
+3.  Shadow analysis accounts for elevation differences
+4.  Query markers appear at correct GPS location AND elevation
+5.  Terrain visually enhances the scene (not distracting)
 
 ## Notes
 

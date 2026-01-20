@@ -1,4 +1,4 @@
-# Terrain Elevation Support
+﻿# Terrain Elevation Support
 
 ## Overview
 
@@ -168,4 +168,4 @@ Compare shadow results with and without terrain loaded to see the effect.
 
 **Version**: 0.1.0
 **Date**: January 14, 2026
-**Status**: ✅ Implemented and tested
+**Status**:  Implemented and tested

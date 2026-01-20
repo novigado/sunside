@@ -1,4 +1,4 @@
-# C++ with Python Bindings Extension Template
+﻿# C++ with Python Bindings Extension Template
 
 <p align="center">
   <img src="../../../readme-assets/cpp_python_bindings.png" width="60%" />

@@ -1,4 +1,4 @@
-# Coordinate System Reference Point Investigation
+﻿# Coordinate System Reference Point Investigation
 
 ## Issue Description
 
@@ -143,7 +143,7 @@ Keep building reference point separate from UI coordinates:
 
 ## Next Steps
 
-### ✅ Solution Implemented (Commit 35c708d)
+###  Solution Implemented (Commit 35c708d)
 
 **Approach**: Option 3 - Store Building Reference (Modified)
 
@@ -181,11 +181,11 @@ x, z = self._geometry_converter.gps_to_scene_coords(
 ```
 
 **Benefits**:
-- ✅ Query markers align perfectly with buildings
-- ✅ Shadow calculations use correct positions
-- ✅ Works even if no buildings loaded (uses UI coordinates)
-- ✅ Clear logging shows which reference point is used
-- ✅ Reuses existing, tested coordinate conversion code
+-  Query markers align perfectly with buildings
+-  Shadow calculations use correct positions
+-  Works even if no buildings loaded (uses UI coordinates)
+-  Clear logging shows which reference point is used
+-  Reuses existing, tested coordinate conversion code
 
 ### Testing Required
 

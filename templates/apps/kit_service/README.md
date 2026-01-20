@@ -1,4 +1,4 @@
-# Kit Service App Template
+﻿# Kit Service App Template
 
 ![Kit Service Image](../../../readme-assets/kit_service.png)
 
