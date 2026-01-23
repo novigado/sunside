@@ -142,40 +142,40 @@ See [API Guide](docs/guides/API_GUIDE.md) for complete API documentation.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              City Shadow Analyzer                        │
+│              City Shadow Analyzer                       │
 ├─────────────────────────────────────────────────────────┤
-│                                                           │
-│  ┌───────────────┐  ┌───────────────┐  ┌─────────────┐ │
-│  │   UI Layer    │  │  REST API     │  │  CLI Tools  │ │
-│  │  (Extension)  │  │  (Service)    │  │             │ │
-│  └───────┬───────┘  └───────┬───────┘  └──────┬──────┘ │
-│          │                  │                   │        │
+│                                                         │
+│  ┌───────────────┐  ┌───────────────┐  ┌─────────────┐  │
+│  │   UI Layer    │  │  REST API     │  │  CLI Tools  │  │
+│  │  (Extension)  │  │  (Service)    │  │             │  │
+│  └───────┬───────┘  └───────┬───────┘  └──────┬──────┘  │
+│          │                  │                   │       │
 │  ┌───────┴──────────────────┴───────────────────┴─────┐ │
-│  │          Core Business Logic Layer                  │ │
+│  │          Core Business Logic Layer                 │ │
 │  │  • BuildingLoader    • TerrainLoader               │ │
 │  │  • ShadowAnalyzer    • SunCalculator               │ │
-│  │  • GeometryConverter                                │ │
-│  └─────────────────────┬───────────────────────────────┘ │
-│                        │                                  │
-│  ┌─────────────────────┴───────────────────────────────┐ │
-│  │            Data & Caching Layer                      │ │
-│  │  • CityCacheManager  • NucleusManager               │ │
-│  │  • USD Serialization                                 │ │
-│  └─────────────────────┬───────────────────────────────┘ │
-│                        │                                  │
-│  ┌─────────────────────┴───────────────────────────────┐ │
-│  │          External Services & APIs                    │ │
-│  │  • OpenStreetMap (Overpass API)                     │ │
-│  │  • Open-Elevation API                                │ │
-│  │  • Omniverse Nucleus (Caching)                      │ │
-│  └──────────────────────────────────────────────────────┘ │
-│                                                           │
-│  ┌──────────────────────────────────────────────────────┐│
-│  │         Foundation: Omniverse Kit SDK + USD          ││
-│  │  • GPU Ray Tracing  • Scene Management               ││
-│  │  • Python Runtime   • Extension System               ││
-│  └──────────────────────────────────────────────────────┘│
-└───────────────────────────────────────────────────────────┘
+│  │  • GeometryConverter                               │ │
+│  └─────────────────────┬──────────────────────────────┘ │
+│                        │                                │
+│  ┌─────────────────────┴──────────────────────────────┐ │
+│  │            Data & Caching Layer                    │ │
+│  │  • CityCacheManager  • NucleusManager              │ │
+│  │  • USD Serialization                               │ │
+│  └─────────────────────┬──────────────────────────────┘ │
+│                        │                                │
+│  ┌─────────────────────┴──────────────────────────────┐ │
+│  │          External Services & APIs                  │ │
+│  │  • OpenStreetMap (Overpass API)                    │ │
+│  │  • Open-Elevation API                              │ │
+│  │  • Omniverse Nucleus (Caching)                     │ │
+│  └────────────────────────────────────────────────────┘ │
+│                                                         │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │         Foundation: Omniverse Kit SDK + USD        │ │
+│  │  • GPU Ray Tracing  • Scene Management             │ │
+│  │  • Python Runtime   • Extension System             │ │
+│  └────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────┘
 ```
 
 See [Architecture Documentation](docs/development/ARCHITECTURE.md) for detailed design.
